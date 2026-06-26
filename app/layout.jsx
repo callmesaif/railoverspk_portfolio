@@ -14,7 +14,7 @@ export const metadata = {
   openGraph: {
     title: 'RaiLoversPK',
     description: "Pakistan's leading railway vlogger and filmmaker.",
-    url: 'https://railoverspk.com',
+    url: 'https://therails.pk',
     siteName: 'RaiLoversPK',
     images: [{ url: '/railoverspk_logo.png', width: 512, height: 512 }],
     type: 'website',
