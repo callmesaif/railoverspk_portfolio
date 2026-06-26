@@ -7,6 +7,7 @@ const BASE_URL = 'https://therails.pk';
 const STATIC_PAGES = [
   { url: '/',          priority: '1.0', changefreq: 'weekly'  },
   { url: '/about',     priority: '0.8', changefreq: 'monthly' },
+  { url: '/reviews',   priority: '0.9', changefreq: 'daily'   },
   { url: '/blogs',     priority: '0.9', changefreq: 'daily'   },
   { url: '/polls',     priority: '0.7', changefreq: 'daily'   },
   { url: '/contact',   priority: '0.6', changefreq: 'yearly'  },

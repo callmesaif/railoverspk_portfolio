@@ -8,15 +8,15 @@ export const metadata = {
     "Pakistan's leading railway vlogger. Cinematic train reviews, journey guides, and railway documentation by RaiLoversPK.",
   keywords: 'Pakistan Railways, train vlog, railway review, Pakistan travel, RaiLoversPK',
   icons: {
-    icon: '/railoverspk_logo.png',
-    apple: '/railoverspk_logo.png',
+    icon: '/railoverspk_logo.webp',
+    apple: '/railoverspk_logo.webp',
   },
   openGraph: {
     title: 'RaiLoversPK',
     description: "Pakistan's leading railway vlogger and filmmaker.",
     url: 'https://therails.pk',
     siteName: 'RaiLoversPK',
-    images: [{ url: '/railoverspk_logo.png', width: 512, height: 512 }],
+    images: [{ url: '/railoverspk_logo.webp', width: 512, height: 512 }],
     type: 'website',
   },
 };

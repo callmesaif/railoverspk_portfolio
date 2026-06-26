@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -7,75 +8,69 @@ import ThemeToggle from './ThemeToggle';
 const links = [
   { href: '/',         label: 'Home'     },
   { href: '/about',    label: 'About'    },
+  { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
   { href: '/polls',    label: 'Polls'    },
   { href: '/contact',  label: 'Contact'  },
 ];
 
 export default function Nav() {
-  const pathname = usePathname();
+  const pathname        = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
-    <nav
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 99,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 2.5rem',
-        height: '62px',
-        background: 'var(--nav-bg)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      {/* Logo */}
-      <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-        <Image
-          src="/railoverspk_logo.webp"
-          alt="RaiLoversPK"
-          width={52}
-          height={52}
-          style={{ objectFit: 'contain' }}
-          priority
-        />
-      </Link>
-
-      {/* Links */}
-      <div style={{ display: 'flex', gap: '2rem' }}>
-        {links.map(({ href, label }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: active ? 'var(--text)' : 'var(--muted)',
-                textDecoration: 'none',
-                paddingBottom: '4px',
-                borderBottom: active ? '1px solid var(--accent)' : '1px solid transparent',
-                transition: 'color 0.2s',
-              }}
-            >
-              {label}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Right side — theme toggle + CTA */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <ThemeToggle />
-        <Link href="/contact" className="btn-primary" style={{ padding: '10px 20px' }}>
-          Get In Touch
+    <>
+      <nav className="rl-nav">
+        {/* Logo */}
+        <Link href="/" className="rl-nav-logo" onClick={() => setOpen(false)}>
+          <Image src="/railoverspk_logo.webp" alt="RaiLoversPK" width={48} height={48} style={{ objectFit: 'contain' }} priority />
         </Link>
-      </div>
-    </nav>
+
+        {/* Desktop links */}
+        <div className="rl-nav-links">
+          {links.map(({ href, label }) => {
+            const active = pathname === href;
+            return (
+              <Link key={href} href={href} className={`rl-nav-link ${active ? 'rl-nav-link-active' : ''}`}>
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Right */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ThemeToggle />
+          <Link href="/contact" className="btn-primary rl-nav-cta" style={{ padding: '10px 18px', fontSize: '10px' }}>
+            Get In Touch
+          </Link>
+          <button onClick={() => setOpen(o => !o)} className="rl-hamburger" aria-label="Toggle menu">
+            {open
+              ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            }
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="rl-drawer-overlay" onClick={() => setOpen(false)}>
+          <div className="rl-drawer" onClick={e => e.stopPropagation()}>
+            {links.map(({ href, label }) => (
+              <Link key={href} href={href} className={`rl-drawer-link ${pathname === href ? 'rl-drawer-link-active' : ''}`}
+                onClick={() => setOpen(false)}>
+                {label}
+              </Link>
+            ))}
+            <Link href="/contact" className="rl-drawer-cta" onClick={() => setOpen(false)}>
+              Get In Touch
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+
+// This file intentionally left blank - styles are in globals.css
