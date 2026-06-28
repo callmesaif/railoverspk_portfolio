@@ -2,7 +2,7 @@
 
 /* ── Design tokens ─────────────────────────── */
 :root {
-  --accent:        #1E90FF;
+  --accent:        hsl(128, 95%, 17%);
   --accent2:       #0066CC;
   --accent-dim:    rgba(30, 144, 255, 0.12);
   --accent-border: rgba(30, 144, 255, 0.28);
