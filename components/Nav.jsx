@@ -10,7 +10,6 @@ const links = [
   { href: '/about',    label: 'About'    },
   { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
-  { href: '/polls',    label: 'Polls'    },
   { href: '/contact',  label: 'Contact'  },
 ];
 
@@ -21,12 +20,10 @@ export default function Nav() {
   return (
     <>
       <nav className="rl-nav">
-        {/* Logo */}
         <Link href="/" className="rl-nav-logo" onClick={() => setOpen(false)}>
           <Image src="/railoverspk_logo.webp" alt="RaiLoversPK" width={48} height={48} style={{ objectFit: 'contain' }} priority />
         </Link>
 
-        {/* Desktop links */}
         <div className="rl-nav-links">
           {links.map(({ href, label }) => {
             const active = pathname === href;
@@ -38,7 +35,6 @@ export default function Nav() {
           })}
         </div>
 
-        {/* Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ThemeToggle />
           <Link href="/contact" className="btn-primary rl-nav-cta" style={{ padding: '10px 18px', fontSize: '10px' }}>
@@ -53,12 +49,12 @@ export default function Nav() {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
       {open && (
         <div className="rl-drawer-overlay" onClick={() => setOpen(false)}>
           <div className="rl-drawer" onClick={e => e.stopPropagation()}>
             {links.map(({ href, label }) => (
-              <Link key={href} href={href} className={`rl-drawer-link ${pathname === href ? 'rl-drawer-link-active' : ''}`}
+              <Link key={href} href={href}
+                className={`rl-drawer-link ${pathname === href ? 'rl-drawer-link-active' : ''}`}
                 onClick={() => setOpen(false)}>
                 {label}
               </Link>
@@ -72,5 +68,3 @@ export default function Nav() {
     </>
   );
 }
-
-// This file intentionally left blank - styles are in globals.css

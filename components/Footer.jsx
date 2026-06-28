@@ -7,7 +7,6 @@ const NAV_LINKS = [
   { href: '/about',    label: 'About'    },
   { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
-  { href: '/polls',    label: 'Polls'    },
   { href: '/contact',  label: 'Contact'  },
 ];
 
@@ -19,7 +18,7 @@ const SOCIALS = [
   { label: 'Twitter',   href: 'https://twitter.com/railoverspk', color: '#1da1f2',
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
   { label: 'TikTok',    href: 'https://tiktok.com/@railoverspk', color: '#ff0050',
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3.3a4.5 4.5 0 0 1-4.5-4.5h-3v12.9a2.1 2.1 0 1 1-2.1-2.1c.2 0 .4 0 .6.1V6.1a5.6 5.6 0 0 0-.6 0 5.6 5.6 0 1 0 5.6 5.6V7.8a7.5 7.5 0 0 0 4.5 1.5V6a4.5 4.5 0 0 1-0.5 0z"/></svg> },
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3.3a4.5 4.5 0 0 1-4.5-4.5h-3v12.9a2.1 2.1 0 1 1-2.1-2.1c.2 0 .4 0 .6.1V6.1a5.6 5.6 0 0 0-.6 0 5.6 5.6 0 1 0 5.6 5.6V7.8a7.5 7.5 0 0 0 4.5 1.5V6a4.5 4.5 0 0 1-.5 0z"/></svg> },
 ];
 
 export default function Footer() {
@@ -28,7 +27,6 @@ export default function Footer() {
     <footer className="rl-footer">
       <div className="rl-footer-inner">
         <div className="rl-footer-top">
-          {/* Left */}
           <div className="rl-footer-left">
             <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
               <Image src="/railoverspk_logo.webp" alt="RaiLoversPK" width={64} height={64} style={{ objectFit: 'contain' }} />
@@ -36,25 +34,21 @@ export default function Footer() {
             <p style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--muted)', margin: 0 }}>
               Documenting the soul of Pakistan Railways through cinematic vision and modern storytelling.
             </p>
-            {/* Socials */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {SOCIALS.map(({ label, href, icon, color }) => (
                 <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                  style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s', flexShrink: 0 }}
+                  style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.color = color; e.currentTarget.style.borderColor = color + '55'; e.currentTarget.style.background = color + '18'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.background = 'transparent'; }}
-                >
-                  {icon}
-                </a>
+                >{icon}</a>
               ))}
             </div>
           </div>
 
-          {/* Nav cols */}
           <div className="rl-footer-nav-cols">
             <div>
               <div style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted2)', marginBottom: '1rem' }}>Pages</div>
-              {NAV_LINKS.slice(0, 4).map(({ href, label }) => (
+              {NAV_LINKS.slice(0, 3).map(({ href, label }) => (
                 <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'none', marginBottom: '0.75rem', transition: 'color 0.2s' }}
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
                   onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
@@ -63,7 +57,7 @@ export default function Footer() {
             </div>
             <div>
               <div style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted2)', marginBottom: '1rem' }}>More</div>
-              {NAV_LINKS.slice(4).map(({ href, label }) => (
+              {NAV_LINKS.slice(3).map(({ href, label }) => (
                 <Link key={href} href={href} style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'none', marginBottom: '0.75rem', transition: 'color 0.2s' }}
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
                   onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
@@ -75,14 +69,9 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom */}
         <div className="rl-footer-bottom">
-          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted2)' }}>
-            © {year} RaiLoversPK. All rights reserved.
-          </span>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted2)' }}>
-            Built with Next.js + Firebase
-          </span>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted2)' }}>© {year} RaiLoversPK. All rights reserved.</span>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted2)' }}>Built with Next.js + Firebase</span>
         </div>
       </div>
     </footer>
