@@ -9,14 +9,12 @@ import AdminAnalytics from '@/components/admin/AdminAnalytics';
 export default function AdminDashboard() {
   const { user }            = useAdmin();
   const [posts,   setPosts]   = useState([]);
-  const [polls,   setPolls]   = useState([]);
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'posts'),   s => setPosts(s.docs));
-    const u2 = onSnapshot(collection(db, 'polls'),   s => setPolls(s.docs));
     const u3 = onSnapshot(collection(db, 'reviews'), s => setReviews(s.docs));
-    return () => { u1(); u2(); u3(); };
+    return () => { u1(); u3(); };
   }, []);
 
   const stats = [
@@ -24,8 +22,6 @@ export default function AdminDashboard() {
     { label: 'Published Posts',   value: posts.filter(d => d.data().published).length,    href: '/admin/posts',   color: '#3fca7a' },
     { label: 'Total Reviews',     value: reviews.length,                                  href: '/admin/reviews', color: '#1E90FF' },
     { label: 'Published Reviews', value: reviews.filter(d => d.data().published).length,  href: '/admin/reviews', color: '#3fca7a' },
-    { label: 'Total Polls',       value: polls.length,                                    href: '/admin/polls',   color: '#1E90FF' },
-    { label: 'Active Polls',      value: polls.filter(d => d.data().isActive).length,     href: '/admin/polls',   color: '#ffb432' },
   ];
 
   return (

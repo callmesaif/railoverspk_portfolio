@@ -190,7 +190,6 @@ body {
 /* ════════════════════════════════════════════
    POLLS
 ════════════════════════════════════════════ */
-.rl-polls-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
 
 /* ════════════════════════════════════════════
    ABOUT
@@ -259,7 +258,6 @@ body {
   .rl-review-detail-grid { grid-template-columns: 1fr; gap: 1.5rem; }
 
   /* Polls */
-  .rl-polls-grid { grid-template-columns: 1fr; }
 
   /* About */
   .rl-about-grid { grid-template-columns: 1fr; gap: 2.5rem; padding: 3rem 1.25rem; }

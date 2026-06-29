@@ -33,7 +33,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="2. About RaiLoversPK">
-          RaiLoversPK is a Pakistan Railways content platform providing train reviews, journey vlogs, travel guides, and community polls. All content is created for informational and entertainment purposes only.
+          RaiLoversPK is a Pakistan Railways content platform providing train reviews, journey vlogs, and travel guides. All content is created for informational and entertainment purposes only.
         </Section>
 
         <Section title="3. Use of Content">
@@ -56,11 +56,7 @@ export default function TermsPage() {
           </ul>
         </Section>
 
-        <Section title="5. Community Polls">
-          Our community polls are for engagement and entertainment purposes only. Poll results do not constitute official surveys or endorsements. We reserve the right to remove or modify polls at any time. One vote per person per poll is permitted — repeated voting attempts are not allowed.
-        </Section>
-
-        <Section title="6. Contact Form">
+<Section title="6. Contact Form">
           By submitting a message through our contact form, you agree that:
           <ul style={LIST}>
             <li>The information you provide is accurate and truthful.</li>

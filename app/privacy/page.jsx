@@ -37,7 +37,6 @@ export default function PrivacyPage() {
           <ul style={LIST}>
             <li><strong>Contact Information:</strong> When you submit our contact form, we collect your name, email address, and message content.</li>
             <li><strong>Usage Data:</strong> We may collect information about how you interact with our website, including pages visited, time spent, and links clicked.</li>
-            <li><strong>Poll Responses:</strong> When you participate in community polls, your vote is recorded anonymously in our database.</li>
             <li><strong>Cookies:</strong> We use localStorage to remember your poll votes so you do not vote more than once per poll.</li>
           </ul>
         </Section>
