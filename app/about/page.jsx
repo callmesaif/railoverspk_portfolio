@@ -67,7 +67,7 @@ export default function AboutPage() {
           }}
         >
           <Image
-            src="/images/portrait.jpg"
+            src="https://i.ibb.co/FkmQKpJq/portrait.jpg"
             alt="RaiLoversPK creator"
             fill
             style={{ objectFit: 'cover' }}

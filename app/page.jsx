@@ -87,7 +87,7 @@ export default function HomePage() {
       <section style={{ position: 'relative', minHeight: '92vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '5rem', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           <Image
-            src="/images/hero-bg.webp"
+            src="https://i.ibb.co/21wQ5B9Q/hero-bg.webp"
             alt="Pakistan Railways"
             fill priority
             style={{ objectFit: 'cover', opacity: 0.55 }}
