@@ -1,7 +1,7 @@
 import './globals.css';
+import Script from 'next/script';
 import Footer from '@/components/Footer';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
   title: 'RaiLoversPK — Pakistan Railway Vlogger & Filmmaker',
@@ -25,12 +25,26 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* ── Google Analytics (gtag.js) ──────────────────────────── */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-W5QBJSXND1"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-W5QBJSXND1');
+          `}
+        </Script>
+      </head>
       <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <ThemeProvider>
           <div style={{ flex: 1 }}>{children}</div>
           <Footer />
         </ThemeProvider>
-        <SpeedInsights />
       </body>
     </html>
   );

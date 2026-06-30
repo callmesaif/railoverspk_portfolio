@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAdmin } from '@/components/admin/AdminAuthProvider';
-import AdminAnalytics from '@/components/admin/AdminAnalytics';
 
 export default function AdminDashboard() {
   const { user }            = useAdmin();
@@ -52,9 +51,30 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Analytics */}
+      {/* Google Analytics */}
       <div style={SECTION}>
-        <AdminAnalytics />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Site Analytics
+          </div>
+          <a
+            href="https://analytics.google.com/analytics/web/#/p0/reports/intelligenthome"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#1E90FF', textDecoration: 'none' }}
+          >
+            Open Google Analytics →
+          </a>
+        </div>
+        <div style={{ background: '#0c0c12', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '32px', marginBottom: '0.75rem' }}>📊</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '6px' }}>
+            Live visitor data is now tracked via Google Analytics
+          </div>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto' }}>
+            View real-time visitors, page views, traffic sources, and audience demographics directly in your Google Analytics dashboard.
+          </div>
+        </div>
       </div>
 
       {/* Recent Posts */}
