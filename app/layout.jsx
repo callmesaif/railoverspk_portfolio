@@ -1,7 +1,9 @@
 import './globals.css';
 import Script from 'next/script';
 import Footer from '@/components/Footer';
+import WhatsAppChat from '@/components/WhatsAppChat';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
   title: 'RaiLoversPK - Pakistan Railway Vlogger & Filmmaker',
@@ -44,6 +46,8 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <div style={{ flex: 1 }}>{children}</div>
           <Footer />
+          <WhatsAppChat />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
