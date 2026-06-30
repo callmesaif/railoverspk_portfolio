@@ -117,8 +117,7 @@ export default function HomePage() {
 
       {/* ── Stats ────────────────────────────────── */}
       <div className="container">
-        {/* Yahan gridTemplateColumns ko responsive kiya gaya hai */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', margin: '3rem 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', margin: '3rem 0' }}>
           {STATS.map(({ num, label }) => (
             <div key={label} style={{ background: 'var(--bg2)', padding: '2rem 1.5rem', textAlign: 'center' }}>
               <div className="font-display" style={{ fontSize: '3.2rem', color: 'var(--accent)', lineHeight: 1 }}>{num}</div>
@@ -139,8 +138,7 @@ export default function HomePage() {
             All blogs →
           </Link>
         </div>
-        {/* Yahan gridTemplateColumns ko responsive kiya gaya hai */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
           {VLOGS.map((v) => <VlogCard key={v.id} vlog={v} />)}
         </div>
       </section>
@@ -154,13 +152,13 @@ export default function HomePage() {
 
         {posts.length === 0 ? (
           // Skeleton placeholders while loading
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
             {[1, 2, 3].map(i => (
               <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', height: '240px', opacity: 0.5 }} />
             ))}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
             {posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         )}
@@ -188,7 +186,7 @@ function VlogCard({ vlog }) {
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        gridColumn: isFeatured ? '1 / -1' : undefined, // Yahan '1 / 3' ki jagah '1 / -1' kiya hai takay mobile pe theek se failay
+        gridColumn: isFeatured ? '1 / 3' : undefined,
         position: 'relative',
         borderRadius: '20px',
         overflow: 'hidden',
