@@ -5,7 +5,7 @@ export default function WhatsAppChat() {
   const phoneNumber = "923198550419"; 
   
   // Default message jo user ke pass pehle se likha hua aayega
-  const defaultMessage = "Salam RaiLoversPK! Mujhe railway ke hawale se rehnumai chahiye.";
+  const defaultMessage = "Assalam O Alaikum RaiLoversPK! Mujhe railway ke hawale se rehnumai chahiye.";
   const encodedMessage = encodeURIComponent(defaultMessage);
 
   return (
