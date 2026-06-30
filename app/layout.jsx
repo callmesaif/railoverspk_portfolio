@@ -4,10 +4,10 @@ import Footer from '@/components/Footer';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata = {
-  title: 'RaiLoversPK — Pakistan Railway Vlogger & Filmmaker',
+  title: 'RaiLoversPK - Pakistan Railway Vlogger & Filmmaker',
   description:
     "Pakistan's leading railway vlogger. Cinematic train reviews, journey guides, and railway documentation by RaiLoversPK.",
-  keywords: 'Pakistan Railways, train vlog, railway review, Pakistan travel, RaiLoversPK',
+  keywords: 'Pakistan Railways, train vlog, railway review, Pakistan travel, RaiLoversPK, Railspk, train journey, railway documentary, train photography, railway enthusiast, Pakistan train travel, RaiLoversPK channel, train vlogging, railway exploration, Pakistan rail network, train adventures, RaiLoversPK videos',
   icons: {
     icon: '/railoverspk_logo.webp',
     apple: '/railoverspk_logo.webp',

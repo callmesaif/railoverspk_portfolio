@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase';
 const STATS = [
   { num: '2M+', label: 'Total Views'    },
   { num: '10+', label: 'Train Reviews'  },
-  { num: '6K',  label: 'Subscribers'    },
+  { num: '6.5K',  label: 'Subscribers'    },
   { num: '5+',  label: 'Years On Track' },
 ];
 
