@@ -8,10 +8,10 @@ import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const STATS = [
-  { num: '2M+', label: 'Total Views'    },
-  { num: '10+', label: 'Train Reviews'  },
-  { num: '6.5K',  label: 'Subscribers'    },
-  { num: '5+',  label: 'Years On Track' },
+  { num: '2M+',  label: 'Total Views'    },
+  { num: '10+',  label: 'Train Reviews'  },
+  { num: '6.5K', label: 'Subscribers'    },
+  { num: '5+',   label: 'Years On Track' },
 ];
 
 const VLOGS = [
@@ -43,7 +43,6 @@ const VLOGS = [
   },
 ];
 
-// Extract YouTube video ID from any URL format
 function getYtId(url) {
   if (!url) return null;
   const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
@@ -84,29 +83,36 @@ export default function HomePage() {
       <Nav />
 
       {/* ── Hero ─────────────────────────────────── */}
-      <section style={{ position: 'relative', minHeight: '92vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '5rem', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      <section className="rl-hero">
+        <div className="rl-hero-bg">
           <Image
             src="https://i.ibb.co/21wQ5B9Q/hero-bg.webp"
             alt="Pakistan Railways"
-            fill priority
+            fill
+            priority
+            sizes="100vw"
+            quality={75}
             style={{ objectFit: 'cover', opacity: 0.55 }}
           />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(5,5,8,0.15) 0%, rgba(5,5,8,0.55) 55%, #050508 100%)' }} />
+          <div className="rl-hero-overlay" />
         </div>
 
-        <div className="container animate-in" style={{ position: 'relative', zIndex: 2 }}>
+        <div className="rl-hero-content container">
           <div className="eyebrow">
             <span className="eyebrow-line" />
             Pakistan Railway Vlogger · Filmmaker
           </div>
-          <h1 className="font-display" style={{ fontSize: 'clamp(4.5rem, 13vw, 9.5rem)', lineHeight: 0.88, textTransform: 'uppercase', marginBottom: '1.75rem' }}>
-            THE RAILS<br />ARE MY <span style={{ color: 'var(--accent)' }}>CANVAS</span>
+          <h1
+            className="font-display"
+            style={{ fontSize: 'clamp(4rem, 13vw, 9.5rem)', lineHeight: 0.88, textTransform: 'uppercase', marginBottom: '1.5rem' }}
+          >
+            THE RAILS<br />ARE MY{' '}
+            <span style={{ color: 'var(--accent)' }}>CANVAS</span>
           </h1>
-          <p style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--muted)', maxWidth: '420px', marginBottom: '2.5rem' }}>
+          <p style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--muted)', maxWidth: '420px', marginBottom: '2rem' }}>
             Documenting Pakistan's railway heritage through cinematic storytelling. Every journey, every locomotive, every story — captured.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div className="rl-hero-actions">
             <Link href="/about" className="btn-ghost">About Me</Link>
           </div>
         </div>
@@ -117,11 +123,11 @@ export default function HomePage() {
 
       {/* ── Stats ────────────────────────────────── */}
       <div className="container">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', margin: '3rem 0' }}>
+        <div className="rl-stats-grid">
           {STATS.map(({ num, label }) => (
-            <div key={label} style={{ background: 'var(--bg2)', padding: '2rem 1.5rem', textAlign: 'center' }}>
-              <div className="font-display" style={{ fontSize: '3.2rem', color: 'var(--accent)', lineHeight: 1 }}>{num}</div>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: '6px' }}>{label}</div>
+            <div key={label} className="rl-stat-box">
+              <div className="rl-stat-num">{num}</div>
+              <div className="rl-stat-label">{label}</div>
             </div>
           ))}
         </div>
@@ -129,7 +135,7 @@ export default function HomePage() {
 
       {/* ── Featured Vlogs ───────────────────────── */}
       <section className="container" style={{ padding: '4rem 2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div className="sec-label">Featured</div>
             <h2 className="sec-title">Top Vlogs</h2>
@@ -138,7 +144,7 @@ export default function HomePage() {
             All blogs →
           </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        <div className="rl-vlogs-grid">
           {VLOGS.map((v) => <VlogCard key={v.id} vlog={v} />)}
         </div>
       </section>
@@ -151,14 +157,13 @@ export default function HomePage() {
         </div>
 
         {posts.length === 0 ? (
-          // Skeleton placeholders while loading
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+          <div className="rl-posts-grid">
             {[1, 2, 3].map(i => (
               <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', height: '240px', opacity: 0.5 }} />
             ))}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+          <div className="rl-posts-grid">
             {posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         )}
@@ -202,7 +207,13 @@ function VlogCard({ vlog }) {
       onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
     >
       {thumb && (
-        <Image src={thumb} alt={vlog.title} fill style={{ objectFit: 'cover' }} unoptimized />
+        <img
+          src={thumb}
+          alt={vlog.title}
+          loading={isFeatured ? 'eager' : 'lazy'}
+          decoding="async"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
       )}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.05) 55%)' }} />
 
@@ -227,7 +238,7 @@ function VlogCard({ vlog }) {
   );
 }
 
-/* ── PostCard — Firebase se live data ───────────── */
+/* ── PostCard ────────────────────────────────────── */
 function PostCard({ post }) {
   return (
     <Link
@@ -236,18 +247,20 @@ function PostCard({ post }) {
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'var(--border2)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
     >
-      {/* Cover image */}
       <div style={{ height: '150px', overflow: 'hidden', position: 'relative', background: 'var(--bg3)' }}>
         {post.coverImage ? (
-          <img src={post.coverImage} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            loading="lazy"
+            decoding="async"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         ) : (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>🚂</div>
         )}
       </div>
-
-      {/* Body */}
       <div style={{ padding: '18px' }}>
-        {/* Tags */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
           {(post.tags || []).slice(0, 2).map(t => (
             <span key={t} style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', padding: '3px 9px', borderRadius: '100px' }}>
