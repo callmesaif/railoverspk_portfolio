@@ -2,7 +2,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import ReviewClient from './ReviewClient';
 
-// ── Dynamic metadata — runs on server ────────────────────────────────
 export async function generateMetadata({ params }) {
   try {
     const { id } = await params;
@@ -11,7 +10,7 @@ export async function generateMetadata({ params }) {
       const r    = snap.data();
       const s    = r.scores || {};
       const vals = [s.punctuality, s.cleanliness, s.comfort, s.food].filter(Boolean);
-      const avg  = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+      const avg  = vals.length ? (vals.reduce((a,b) => a+b,0) / vals.length).toFixed(1) : null;
       return {
         title:       `${r.name} Review — RaiLoversPK`,
         description: `${r.name} train scorecard. Route: ${r.route}${avg ? `. Overall: ${avg}/5` : ''}. Expert review by RaiLoversPK.`,
@@ -25,7 +24,6 @@ export async function generateMetadata({ params }) {
   return { title: 'Train Review — RaiLoversPK' };
 }
 
-// ── Page — delegates all rendering to Client Component ────────────────
 export default function ReviewDetailPage({ params }) {
   return <ReviewClient params={params} />;
 }
