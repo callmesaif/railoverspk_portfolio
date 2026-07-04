@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import DisplayAd from '@/components/DisplayAd';
 
 function StarRow({ score, max = 5 }) {
   return (

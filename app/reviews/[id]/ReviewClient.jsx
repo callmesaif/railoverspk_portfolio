@@ -8,6 +8,8 @@ import {
   collection, addDoc, onSnapshot,
   query, orderBy, serverTimestamp,
 } from 'firebase/firestore';
+import NativeAd from '@/components/NativeAd';
+import DisplayAd from '@/components/DisplayAd';
 
 /* ── YouTube ID helper ─────────────────────── */
 function getYtId(url) {
@@ -274,6 +276,8 @@ export default function ReviewClient({ params }) {
 
       <div className="container" style={{ maxWidth: '900px', padding: review.coverImage ? '0 2.5rem 5rem' : '4rem 2.5rem 5rem', marginTop: review.coverImage ? '-100px' : 0, position: 'relative', zIndex: 2 }}>
 
+        <DisplayAd adKey="27aaf4583cd40bb5d0525aeb064ab65b" width={300} height={250} />
+
         {/* Back + Stats */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <Link href="/reviews" style={BACK_LINK}>← All Scorecards</Link>
@@ -374,6 +378,8 @@ export default function ReviewClient({ params }) {
         )}
 
         <div style={DIVIDER} />
+        
+        <NativeAd />
 
         {/* Comments */}
         <CommentsSection reviewId={id} />

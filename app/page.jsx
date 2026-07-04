@@ -6,6 +6,8 @@ import Nav from '@/components/Nav';
 import Ticker from '@/components/Ticker';
 import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import NativeAd from '@/components/NativeAd';
+import DisplayAd from '@/components/DisplayAd';
 
 const STATS = [
   { num: '2M+',  label: 'Total Views'    },
@@ -151,6 +153,8 @@ export default function HomePage() {
 
       {/* ── Recent Posts ─────────────────────────── */}
       <section className="container" style={{ padding: '0 2.5rem 5rem' }}>
+        <DisplayAd adKey="db0fe7020d8a8c1b0c5406cc9e352dc4" width={320} height={50} />
+        
         <div style={{ marginBottom: '2.5rem' }}>
           <div className="sec-label">Writing</div>
           <h2 className="sec-title">Recent Posts</h2>
@@ -167,6 +171,8 @@ export default function HomePage() {
             {posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         )}
+        
+        <NativeAd />
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <Link href="/blogs" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none' }}>

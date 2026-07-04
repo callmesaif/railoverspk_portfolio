@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import NativeAd from '@/components/NativeAd';
+import DisplayAd from '@/components/DisplayAd';
 
 function getYouTubeId(url) {
   if (!url) return null;
@@ -70,6 +72,8 @@ export default function BlogClient({ params }) {
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)' }}>{post.date}</span>
           {post.videoUrl && <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.15)', color: '#f97070', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: '100px' }}>▶ Video included</span>}
         </div>
+        
+        <DisplayAd adKey="db0fe7020d8a8c1b0c5406cc9e352dc4" width={320} height={50} />
 
         <div style={DIVIDER} />
 
@@ -95,6 +99,8 @@ export default function BlogClient({ params }) {
             para.trim() ? <p key={i} style={{ marginBottom: '1.25rem' }}>{para}</p> : <br key={i} />
           )}
         </div>
+
+        <DisplayAd adKey="27aaf4583cd40bb5d0525aeb064ab65b" width={300} height={250} />
 
         <div style={DIVIDER} />
 
