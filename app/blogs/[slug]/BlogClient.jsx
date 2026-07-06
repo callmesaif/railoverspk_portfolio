@@ -4,8 +4,6 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import NativeAd from '@/components/NativeAd';
-import DisplayAd from '@/components/DisplayAd';
 
 function getYouTubeId(url) {
   if (!url) return null;
@@ -47,36 +45,50 @@ export default function BlogClient({ params }) {
 
   const videoId = getYouTubeId(post.videoUrl);
 
+  // Detect if content is HTML (from Tiptap) or plain text (legacy)
+  const isHTML = post.content?.trim().startsWith('<');
+
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
       <Nav />
 
+      {/* Cover image */}
       {post.coverImage && (
         <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: '90vh', overflow: 'hidden' }}>
-          <img src={post.coverImage} alt={post.title} style={{ width: '100%', height: 'auto', maxHeight: '90vh', objectFit: 'contain', display: 'block' }} />
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            style={{ width: '100%', height: 'auto', maxHeight: '90vh', objectFit: 'contain', display: 'block' }}
+          />
         </div>
       )}
 
       <article style={{ maxWidth: '780px', margin: '0 auto', padding: '3rem 2.5rem 5rem' }}>
         <Link href="/blogs" style={BACK_LINK}>← Back to Blog</Link>
 
+        {/* Tags */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '1.25rem' }}>
           {(post.tags || []).map(t => <span key={t} style={TAG}>{t}</span>)}
         </div>
 
+        {/* Title */}
         <h1 className="font-display" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 0.92, textTransform: 'uppercase', marginBottom: '1.25rem' }}>
           {post.title}
         </h1>
 
+        {/* Meta */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)' }}>{post.date}</span>
-          {post.videoUrl && <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.15)', color: '#f97070', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: '100px' }}>▶ Video included</span>}
+          {post.videoUrl && (
+            <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.15)', color: '#f97070', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: '100px' }}>
+              ▶ Video included
+            </span>
+          )}
         </div>
-        
-        <DisplayAd adKey="db0fe7020d8a8c1b0c5406cc9e352dc4" width={320} height={50} />
 
         <div style={DIVIDER} />
 
+        {/* YouTube embed */}
         {videoId && (
           <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1.5rem', marginBottom: '2rem' }}>
             <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -94,20 +106,59 @@ export default function BlogClient({ params }) {
           </div>
         )}
 
-        <div style={{ fontSize: '15px', lineHeight: 1.85, color: 'rgba(255,255,255,0.75)' }}>
-          {(post.content || '').split('\n').map((para, i) =>
-            para.trim() ? <p key={i} style={{ marginBottom: '1.25rem' }}>{para}</p> : <br key={i} />
-          )}
-        </div>
-
-        <DisplayAd adKey="27aaf4583cd40bb5d0525aeb064ab65b" width={300} height={250} />
+        {/* Content — HTML or plain text */}
+        {isHTML ? (
+          <>
+            <div
+              className="rl-post-content"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+            <style>{`
+              .rl-post-content { font-size: 15px; line-height: 1.85; color: rgba(255,255,255,0.75); }
+              .rl-post-content p { margin-bottom: 1.1rem; }
+              .rl-post-content h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; text-transform: uppercase; margin: 2rem 0 0.75rem; color: #fff; line-height: 1; }
+              .rl-post-content h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; text-transform: uppercase; margin: 1.5rem 0 0.5rem; color: #fff; }
+              .rl-post-content h4 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 0.4rem; color: #fff; }
+              .rl-post-content strong { color: #fff; font-weight: 700; }
+              .rl-post-content em { font-style: italic; }
+              .rl-post-content u { text-decoration: underline; }
+              .rl-post-content s { text-decoration: line-through; opacity: 0.6; }
+              .rl-post-content ul { padding-left: 1.5rem; margin: 0.75rem 0; list-style: disc; }
+              .rl-post-content ol { padding-left: 1.5rem; margin: 0.75rem 0; list-style: decimal; }
+              .rl-post-content li { margin-bottom: 0.35rem; }
+              .rl-post-content blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.25rem 0; color: rgba(255,255,255,0.55); font-style: italic; }
+              .rl-post-content code { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 2px 6px; font-family: monospace; font-size: 13px; color: var(--accent); }
+              .rl-post-content pre { background: #050508; border-radius: 10px; padding: 1rem; margin: 1rem 0; overflow-x: auto; }
+              .rl-post-content pre code { background: none; color: #3fca7a; padding: 0; }
+              .rl-post-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
+              .rl-post-content a { color: var(--accent); text-decoration: underline; }
+              .rl-post-content img { max-width: 100%; border-radius: 10px; margin: 1rem 0; display: block; }
+              .rl-post-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+              .rl-post-content th { background: rgba(30,144,255,0.12); border: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--accent); text-align: left; }
+              .rl-post-content td { border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; font-size: 13px; }
+              .rl-post-content tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+              .rl-post-content [style*="text-align: center"] { text-align: center; }
+              .rl-post-content [style*="text-align: right"] { text-align: right; }
+            `}</style>
+          </>
+        ) : (
+          // Legacy plain text rendering
+          <div style={{ fontSize: '15px', lineHeight: 1.85, color: 'rgba(255,255,255,0.75)' }}>
+            {(post.content || '').split('\n').map((para, i) =>
+              para.trim() ? <p key={i} style={{ marginBottom: '1.25rem' }}>{para}</p> : <br key={i} />
+            )}
+          </div>
+        )}
 
         <div style={DIVIDER} />
 
+        {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <Link href="/blogs" style={BTN_BACK}>← All Posts</Link>
           {post.videoUrl && (
-            <a href={post.videoUrl} target="_blank" rel="noopener noreferrer" style={BTN_YT}>Watch on YouTube ↗</a>
+            <a href={post.videoUrl} target="_blank" rel="noopener noreferrer" style={BTN_YT}>
+              Watch on YouTube ↗
+            </a>
           )}
         </div>
       </article>
