@@ -1,14 +1,13 @@
-/* ── Google Fonts — preconnect + preload (render-blocking nahi) ──── */
-/* Add these in layout.jsx <head> instead of @import:
+/* ── Google Fonts — non-blocking ───────────── */
+/* Add these in layout.jsx <head>:
    <link rel="preconnect" href="https://fonts.googleapis.com" />
    <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" />
-   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" media="print" onload="this.media='all'" />
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" />
 */
 
 /* ── Design tokens ─────────────────────────── */
 :root {
-  --accent:        hsl(128, 95%, 17%);
+  --accent:        #1E90FF;
   --accent2:       #0066CC;
   --accent-dim:    rgba(30, 144, 255, 0.12);
   --accent-border: rgba(30, 144, 255, 0.28);
@@ -35,18 +34,23 @@ html.light {
   --nav-bg:        rgba(245, 245, 247, 0.92);
 }
 
-/* Fallback fonts while web fonts load */
-body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-.font-display { font-family: 'Bebas Neue', 'Arial Black', sans-serif; }
-
+/* ── Reset ─────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg); color: var(--text);
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.2s ease;
 }
+
+/* ── Prevent CLS — all images need dimensions ─ */
+img { max-width: 100%; height: auto; display: block; }
+
+/* ── Typography ────────────────────────────── */
+.font-display { font-family: 'Bebas Neue', 'Arial Black', sans-serif; }
 
 /* ── Layout ────────────────────────────────── */
 .container { max-width: 1160px; margin: 0 auto; padding: 0 2.5rem; }
@@ -62,29 +66,32 @@ body {
 /* ── Buttons ───────────────────────────────── */
 .btn-primary {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 11px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase;
-  color: #fff; background: var(--accent);
+  font-size: 11px; font-weight: 900; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #fff; background: var(--accent);
   padding: 15px 28px; border-radius: 100px; border: none;
   cursor: pointer; text-decoration: none; transition: opacity 0.2s;
+  /* will-change prevents layout recalcs on hover */
+  will-change: opacity;
 }
 .btn-primary:hover { opacity: 0.85; }
 
 .btn-ghost {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--muted); padding: 15px 22px; border-radius: 100px;
-  border: 1px solid var(--border2); cursor: pointer;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); padding: 15px 22px;
+  border-radius: 100px; border: 1px solid var(--border2); cursor: pointer;
   background: transparent; text-decoration: none;
   transition: color 0.2s, border-color 0.2s;
 }
 .btn-ghost:hover { color: var(--text); }
 
 /* ── Ticker ────────────────────────────────── */
-.ticker { background: var(--accent); overflow: hidden; padding: 9px 0; }
-.ticker-inner { display: flex; white-space: nowrap; animation: ticker 26s linear infinite; }
+.ticker { background: var(--accent); overflow: hidden; padding: 9px 0; contain: layout; }
+.ticker-inner { display: flex; white-space: nowrap; animation: ticker 26s linear infinite; will-change: transform; }
 .ticker-item {
-  font-size: 11px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #fff; padding: 0 2rem; display: flex; align-items: center; gap: 10px; opacity: 0.92;
+  font-size: 11px; font-weight: 900; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #fff; padding: 0 2rem;
+  display: flex; align-items: center; gap: 10px; opacity: 0.92;
 }
 .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.5); flex-shrink: 0; }
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -94,7 +101,10 @@ body {
   font-size: 10px; font-weight: 900; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--accent); margin-bottom: 0.6rem;
 }
-.sec-title { font-family: 'Bebas Neue', 'Arial Black', sans-serif; font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 0.92; text-transform: uppercase; }
+.sec-title {
+  font-family: 'Bebas Neue', 'Arial Black', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 0.92; text-transform: uppercase;
+}
 
 /* ── Animations ────────────────────────────── */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -114,6 +124,7 @@ body {
   padding: 0 1.5rem; height: 62px;
   background: var(--nav-bg); backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
+  contain: layout style;
 }
 .rl-nav-logo { text-decoration: none; display: flex; align-items: center; }
 .rl-nav-links { display: flex; gap: 1.75rem; }
@@ -131,10 +142,7 @@ body {
   cursor: pointer; display: none; align-items: center; justify-content: center;
   color: var(--text);
 }
-.rl-drawer-overlay {
-  position: fixed; inset: 0; z-index: 98;
-  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
-}
+.rl-drawer-overlay { position: fixed; inset: 0; z-index: 98; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
 .rl-drawer {
   position: absolute; top: 62px; left: 0; right: 0;
   background: var(--bg2); border-bottom: 1px solid var(--border);
@@ -143,15 +151,14 @@ body {
 .rl-drawer-link {
   display: block; padding: 14px 0;
   font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  text-decoration: none; color: var(--text);
-  border-bottom: 1px solid var(--border); transition: color 0.2s;
+  text-decoration: none; color: var(--text); border-bottom: 1px solid var(--border);
 }
 .rl-drawer-link-active { color: var(--accent); }
 .rl-drawer-cta {
   display: block; margin-top: 1.25rem; padding: 14px;
   background: var(--accent); color: #fff; border-radius: 12px;
-  font-size: 12px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase;
-  text-decoration: none; text-align: center;
+  font-size: 12px; font-weight: 900; letter-spacing: 0.14em;
+  text-transform: uppercase; text-decoration: none; text-align: center;
 }
 
 /* ════════════════════════════════════════════
@@ -168,19 +175,21 @@ body {
 }
 
 /* ════════════════════════════════════════════
-   HOME PAGE GRIDS — CSS classes (mobile-friendly)
+   HOME GRIDS
 ════════════════════════════════════════════ */
-.rl-hero { position: relative; min-height: 92vh; display: flex; align-items: flex-end; padding-bottom: 5rem; overflow: hidden; }
+.rl-hero { position: relative; min-height: 92vh; display: flex; align-items: flex-end; padding-bottom: 5rem; overflow: hidden; contain: layout; }
 .rl-hero-bg { position: absolute; inset: 0; z-index: 0; }
 .rl-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(5,5,8,0.15) 0%, rgba(5,5,8,0.55) 55%, #050508 100%); }
 .rl-hero-content { position: relative; z-index: 2; width: 100%; padding: 0 2.5rem; }
 .rl-hero-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
+/* Stats grid — explicit height prevents CLS */
 .rl-stats-grid {
   display: grid; grid-template-columns: repeat(4,1fr);
   gap: 1px; background: var(--border);
   border: 1px solid var(--border); border-radius: 20px;
   overflow: hidden; margin: 3rem 0;
+  contain: layout;
 }
 .rl-stat-box { background: var(--bg2); padding: 2rem 1.5rem; text-align: center; }
 .rl-stat-num { font-family: 'Bebas Neue', 'Arial Black', sans-serif; font-size: 3.2rem; color: var(--accent); line-height: 1; }
@@ -190,7 +199,7 @@ body {
 .rl-posts-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 
 /* ════════════════════════════════════════════
-   BLOG / REVIEWS / ABOUT / CONTACT / PROJECTS
+   OTHER PAGE GRIDS
 ════════════════════════════════════════════ */
 .rl-blog-hero { display: flex; border-radius: 24px; overflow: hidden; }
 .rl-blog-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
@@ -230,15 +239,15 @@ body {
   /* Hero */
   .rl-hero { min-height: 80vh; padding-bottom: 3rem; }
   .rl-hero-content { padding: 0 1.25rem; }
-  .rl-hero-actions { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .rl-hero-actions { flex-direction: column; align-items: stretch; gap: 0.75rem; }
   .rl-hero-actions a, .rl-hero-actions button { width: 100%; justify-content: center; }
 
-  /* Stats — 2x2 on mobile */
+  /* Stats */
   .rl-stats-grid { grid-template-columns: repeat(2,1fr); }
   .rl-stat-box { padding: 1.25rem 1rem; }
   .rl-stat-num { font-size: 2.4rem; }
 
-  /* Grids — single column */
+  /* Grids */
   .rl-vlogs-grid { grid-template-columns: 1fr; }
   .rl-posts-grid { grid-template-columns: 1fr; }
   .rl-blog-grid { grid-template-columns: 1fr; }
@@ -248,7 +257,6 @@ body {
 
   /* Blog hero */
   .rl-blog-hero { flex-direction: column; }
-  .rl-blog-hero > div:first-child { min-height: 200px !important; flex: unset !important; }
 
   /* About */
   .rl-about-grid { grid-template-columns: 1fr; gap: 2.5rem; padding: 3rem 1.25rem; }

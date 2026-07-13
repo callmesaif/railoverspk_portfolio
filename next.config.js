@@ -1,31 +1,51 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ── Image optimization ──────────────────────────────────────────────
   images: {
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
     remotePatterns: [
+      { protocol: 'https', hostname: 'i.ytimg.com'                   },
+      { protocol: 'https', hostname: 'img.youtube.com'               },
+      { protocol: 'https', hostname: 'images.unsplash.com'           },
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com'},
+      { protocol: 'https', hostname: 'i.ibb.co'                      },
+      { protocol: 'https', hostname: 'ibb.co'                        },
+    ],
+  },
+
+  // ── Compression ─────────────────────────────────────────────────────
+  compress: true,
+
+  // ── Headers — cache static assets aggressively ──────────────────────
+  async headers() {
+    return [
       {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',          // YouTube thumbnails
+        source: '/:path*',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
       },
       {
-        protocol: 'https',
-        hostname: 'img.youtube.com',       // YouTube thumbnails (alt)
+        // Cache fonts and static files for 1 year
+        source: '/(.*)\\.(woff|woff2|ttf|eot|ico|svg|png|jpg|jpeg|webp|avif)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
       },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',   // Placeholder images
-      },
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com', // Firebase Storage
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.ibb.co', // ImgBB uploads
-      },
-      {
-        protocol: 'https',
-        hostname: 'ibb.co',
-      },
+    ];
+  },
+
+  // ── Experimental ────────────────────────────────────────────────────
+  experimental: {
+    optimizePackageImports: [
+      '@tiptap/react',
+      '@tiptap/pm',
+      '@tiptap/starter-kit',
+      'firebase/firestore',
+      'firebase/auth',
     ],
   },
 };
