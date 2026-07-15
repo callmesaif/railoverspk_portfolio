@@ -4,10 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
 import Ticker from '@/components/Ticker';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import NativeAd from '@/components/NativeAd';
-import DisplayAd from '@/components/DisplayAd';
 
 const STATS = [
   { num: '2M+',  label: 'Total Views'    },
@@ -64,15 +62,17 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchPosts() {
       try {
+        // Fetch ALL published posts first — limit AFTER sorting, not before,
+        // otherwise Firestore may return old posts before new ones exist as
+        // "first 3" in its default order.
         const q = query(
           collection(db, 'posts'),
-          where('published', '==', true),
-          limit(3)
+          where('published', '==', true)
         );
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         data.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-        setPosts(data);
+        setPosts(data.slice(0, 3)); // top 3 AFTER sorting by date
       } catch (e) {
         console.error('Posts fetch error:', e);
       }

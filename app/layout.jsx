@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import WhatsAppChat from '@/components/WhatsAppChat';
+import CopyProtection from '@/components/CopyProtection';
 
 export const metadata = {
   title: 'RaiLoversPK — Pakistan Railway Vlogger & Filmmaker',
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
           <Footer />
           <SpeedInsights />
           <WhatsAppChat />
+          <CopyProtection />
         </ThemeProvider>
       </body>
     </html>
