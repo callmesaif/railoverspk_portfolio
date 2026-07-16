@@ -43,5 +43,23 @@ export default async function sitemap() {
     console.error('Sitemap: could not fetch blog posts', err);
   }
 
-  return [...staticRoutes, ...blogRoutes];
+  // Dynamic train reviews from Firestore — THIS WAS MISSING
+  let reviewRoutes = [];
+  try {
+    const q = query(collection(db, 'reviews'), where('published', '==', true));
+    const snap = await getDocs(q);
+    reviewRoutes = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        url: `${BASE_URL}/reviews/${doc.id}`,
+        lastModified: data.updatedAt?.toDate?.()?.toISOString?.() || today,
+        changeFrequency: 'monthly',
+        priority: 0.8, // slightly higher than blog posts since reviews are core content
+      };
+    });
+  } catch (err) {
+    console.error('Sitemap: could not fetch reviews', err);
+  }
+
+  return [...staticRoutes, ...blogRoutes, ...reviewRoutes];
 }
