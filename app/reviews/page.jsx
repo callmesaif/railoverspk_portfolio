@@ -27,7 +27,21 @@ export default function ReviewsPage() {
   useEffect(() => {
     const q = query(collection(db, 'reviews'), where('published', '==', true));
     const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const data = snap.docs.map(d => {
+        const rawData = d.data();
+        
+        // 🚨 CRITICAL FIX: Firestore Objects ko wapis array mein normalize karna[cite: 1]
+        const normalizedFares = rawData.fares 
+          ? (Array.isArray(rawData.fares) ? rawData.fares : Object.values(rawData.fares))
+          : [];
+
+        return { 
+          id: d.id, 
+          ...rawData,
+          fares: normalizedFares // Safe fallback for mapping[cite: 1]
+        };
+      });
+      
       data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       setReviews(data);
       setLoading(false);
@@ -65,7 +79,7 @@ export default function ReviewsPage() {
         </h1>
       </div>
 
-      {/* ── Leaderboard section ─────────────────── */}
+      {/* Leaderboard section */}
       {!loading && reviews.length > 0 && (
         <div className="container" style={{ padding: '0 2.5rem 3rem' }}>
           <div style={{
@@ -178,6 +192,7 @@ export default function ReviewsPage() {
                       ))}
                     </div>
 
+                    {/* Fares safe slicing after normalization */}
                     {(r.fares || []).slice(0, 2).map((f, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>
                         <span style={{ color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{f.class}</span>
