@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
 import Ticker from '@/components/Ticker';
+import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -58,6 +59,7 @@ function getYtThumb(url, quality = 'hqdefault') {
 
 export default function HomePage() {
   const [posts, setPosts] = useState([]);
+  const [topReviews, setTopReviews] = useState([]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -78,6 +80,23 @@ export default function HomePage() {
       }
     }
     fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const q = query(
+          collection(db, 'reviews'),
+          where('published', '==', true)
+        );
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setTopReviews(data);
+      } catch (e) {
+        console.error('Reviews fetch error:', e);
+      }
+    }
+    fetchReviews();
   }, []);
 
   return (
@@ -151,8 +170,26 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Top Rated Trains (Leaderboard) ───────── */}
+      {topReviews.length > 0 && (
+        <section className="container" style={{ padding: '0 2.5rem 4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div className="sec-label">🏆 Rankings</div>
+              <h2 className="sec-title">Top Rated Trains</h2>
+            </div>
+            <Link href="/reviews" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              All Scorecards →
+            </Link>
+          </div>
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '24px', padding: '1.5rem' }}>
+            <TrainLeaderboard reviews={topReviews} limit={5} compact />
+          </div>
+        </section>
+      )}
+
       {/* ── Recent Posts ─────────────────────────── */}
-      <section className="container" style={{ padding: '0 2.5rem 5rem' }}>        
+      <section className="container" style={{ padding: '0 2.5rem 5rem' }}>
         <div style={{ marginBottom: '2.5rem' }}>
           <div className="sec-label">Writing</div>
           <h2 className="sec-title">Recent Posts</h2>
@@ -169,7 +206,7 @@ export default function HomePage() {
             {posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         )}
-        
+
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <Link href="/blogs" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none' }}>
             View All Posts →

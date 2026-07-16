@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
+import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -10,7 +11,7 @@ function StarRow({ score, max = 5 }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
       {[...Array(max)].map((_, i) => (
-        <span key={i} style={{ fontSize: '12px', color: i < score ? '#1E90FF' : 'var(--border2)' }}>★</span>
+        <span key={i} style={{ fontSize: '12px', color: i < score ? 'var(--accent)' : 'var(--border2)' }}>★</span>
       ))}
     </div>
   );
@@ -21,6 +22,7 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState('');
   const [activeRoute, setActiveRoute] = useState('All');
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, 'reviews'), where('published', '==', true));
@@ -56,13 +58,40 @@ export default function ReviewsPage() {
       <Nav />
 
       {/* Header */}
-      <div className="container" style={{ padding: '4rem 2.5rem 2.5rem' }}>
+      <div className="container" style={{ padding: '4rem 2.5rem 2rem' }}>
         <div className="eyebrow"><span className="eyebrow-line" />Official Expert Ratings</div>
-        <h1 className="font-display" style={{ fontSize: 'clamp(3rem,10vw,7rem)', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: '2rem' }}>
+        <h1 className="font-display" style={{ fontSize: 'clamp(3rem,10vw,7rem)', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: '1rem' }}>
           TRAIN <span style={{ color: 'var(--accent)' }}>SCORECARDS</span>
         </h1>
+      </div>
 
-        {/* Search */}
+      {/* ── Leaderboard section ─────────────────── */}
+      {!loading && reviews.length > 0 && (
+        <div className="container" style={{ padding: '0 2.5rem 3rem' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '1.25rem', cursor: 'pointer', flexWrap: 'wrap', gap: '10px',
+          }}
+            onClick={() => setShowLeaderboard(s => !s)}
+          >
+            <div>
+              <div className="sec-label">🏆 Rankings</div>
+              <h2 className="sec-title" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Top Rated Trains</h2>
+            </div>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {showLeaderboard ? '▲ Hide' : '▼ Show'}
+            </span>
+          </div>
+          {showLeaderboard && (
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '24px', padding: '1.5rem' }}>
+              <TrainLeaderboard reviews={reviews} limit={10} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search + Filters */}
+      <div className="container" style={{ padding: '0 2.5rem 2.5rem' }}>
         <div style={SEARCH_WRAP}>
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ color: 'var(--accent)', flexShrink: 0 }}>
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -72,7 +101,6 @@ export default function ReviewsPage() {
           {search && <button onClick={() => setSearch('')} style={CLEAR_BTN}>✕</button>}
         </div>
 
-        {/* Route filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1rem' }}>
           {routes.map(r => (
             <button key={r} onClick={() => setActiveRoute(r)} style={{
@@ -88,9 +116,9 @@ export default function ReviewsPage() {
       </div>
 
       {/* Grid */}
-      <div className="container" style={{ padding: '0 2.5rem 5rem' }}>
+      <div className="container rl-reviews-grid-wrap" style={{ padding: '0 2.5rem 5rem' }}>
         {loading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
+          <div className="rl-reviews-grid">
             {[...Array(6)].map((_, i) => (
               <div key={i} style={{ background: 'var(--bg2)', borderRadius: '20px', height: '340px', border: '1px solid var(--border)' }} />
             ))}
@@ -102,7 +130,7 @@ export default function ReviewsPage() {
         )}
 
         {!loading && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
+          <div className="rl-reviews-grid">
             {filtered.map(r => {
               const avg = overallScore(r);
               return (
@@ -110,15 +138,13 @@ export default function ReviewsPage() {
                   onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.borderColor='var(--accent-border)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.borderColor='var(--border)'; }}
                 >
-                  {/* Cover image */}
                   <div style={{ position: 'relative', height: '180px', flexShrink: 0, overflow: 'hidden' }}>
                     {r.coverImage
-                      ? <Image src={r.coverImage} alt={r.name} fill style={{ objectFit: 'cover', transition: 'transform 0.4s' }} unoptimized />
+                      ? <Image src={r.coverImage} alt={r.name} fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" style={{ objectFit: 'cover', transition: 'transform 0.4s' }} unoptimized />
                       : <div style={{ position: 'absolute', inset: 0, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🚂</div>
                     }
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
 
-                    {/* Overall score badge */}
                     {avg && (
                       <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(5,5,8,0.85)', backdropFilter: 'blur(8px)', border: '1px solid var(--accent-border)', borderRadius: '12px', padding: '6px 10px', textAlign: 'center' }}>
                         <div style={{ fontSize: '8px', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '2px' }}>Score</div>
@@ -126,21 +152,18 @@ export default function ReviewsPage() {
                       </div>
                     )}
 
-                    {/* Verified badge */}
                     <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <span style={{ fontSize: '10px', color: '#3fca7a' }}>✓</span>
                       <span style={{ fontSize: '8px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff' }}>Verified</span>
                     </div>
                   </div>
 
-                  {/* Body */}
                   <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <h2 className="font-display" style={{ fontSize: '1.5rem', textTransform: 'uppercase', lineHeight: 1, marginBottom: '4px' }}>{r.name}</h2>
                     <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '14px' }}>
                       {r.route}
                     </div>
 
-                    {/* Score rows */}
                     <div style={{ background: 'var(--bg3)', borderRadius: '12px', padding: '12px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {[
                         { label: '⏱ Punctuality', val: r.scores?.punctuality },
@@ -155,7 +178,6 @@ export default function ReviewsPage() {
                       ))}
                     </div>
 
-                    {/* Fares */}
                     {(r.fares || []).slice(0, 2).map((f, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>
                         <span style={{ color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{f.class}</span>
