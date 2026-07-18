@@ -2,6 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
+import ShareButton from '@/components/ShareButton';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -51,6 +52,7 @@ export default function BlogClient({ params }) {
 
   const videoId = getYouTubeId(post.videoUrl);
   const isHTML  = post.content?.trim().startsWith('<');
+  const shareUrl = `https://therails.pk/blogs/${post.id}`;
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
@@ -84,14 +86,17 @@ export default function BlogClient({ params }) {
           {post.title}
         </h1>
 
-        {/* Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)' }}>{post.date}</span>
-          {post.videoUrl && (
-            <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.15)', color: '#f97070', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: '100px' }}>
-              ▶ Video included
-            </span>
-          )}
+        {/* Meta + Share */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)' }}>{post.date}</span>
+            {post.videoUrl && (
+              <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.15)', color: '#f97070', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: '100px' }}>
+                ▶ Video included
+              </span>
+            )}
+          </div>
+          <ShareButton url={shareUrl} title={post.title} compact />
         </div>
 
         <div style={DIVIDER} />
@@ -179,11 +184,14 @@ export default function BlogClient({ params }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <Link href="/blogs" style={BTN_BACK}>← All Posts</Link>
-          {post.videoUrl && (
-            <a href={post.videoUrl} target="_blank" rel="noopener noreferrer" style={BTN_YT}>
-              Watch on YouTube ↗
-            </a>
-          )}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <ShareButton url={shareUrl} title={post.title} />
+            {post.videoUrl && (
+              <a href={post.videoUrl} target="_blank" rel="noopener noreferrer" style={BTN_YT}>
+                Watch on YouTube ↗
+              </a>
+            )}
+          </div>
         </div>
       </article>
     </main>
