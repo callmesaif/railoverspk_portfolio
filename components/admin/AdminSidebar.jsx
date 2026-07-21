@@ -9,6 +9,7 @@ const NAV = [
   { href: '/admin',         label: 'Dashboard', icon: '▦' },
   { href: '/admin/posts',   label: 'Blog Posts', icon: '✎' },
   { href: '/admin/reviews', label: 'Reviews',    icon: '★' },
+  { href: '/admin/stories', label: 'Stories',    icon: '◎' },
 ];
 
 const SITE_LINKS = [

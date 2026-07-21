@@ -7,6 +7,7 @@ import Ticker from '@/components/Ticker';
 import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import StoriesBar from '@/components/StoriesBar';
 
 const STATS = [
   { num: '2M+',  label: 'Total Views'    },
@@ -102,6 +103,7 @@ export default function HomePage() {
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <Nav />
+      <StoriesBar />
 
       {/* ── Hero ─────────────────────────────────── */}
       <section className="rl-hero">
