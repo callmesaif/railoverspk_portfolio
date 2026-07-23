@@ -12,6 +12,7 @@ const STATIC_PAGES = [
   { url: '/contact',   priority: '0.6', changefreq: 'yearly'  },
   { url: '/privacy',   priority: '0.3', changefreq: 'yearly'  },
   { url: '/terms',     priority: '0.3', changefreq: 'yearly'  },
+  { url: '/refunds',   priority: '0.4', changefreq: 'monthly' },
 ];
 
 export default async function sitemap() {

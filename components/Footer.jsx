@@ -65,6 +65,7 @@ export default function Footer() {
               ))}
               <Link href="/privacy" style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'none', marginBottom: '0.75rem' }}>Privacy</Link>
               <Link href="/terms"   style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'none', marginBottom: '0.75rem' }}>Terms</Link>
+              <Link href="/refunds" style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'none', marginBottom: '0.75rem' }}>Refund Policy</Link>
             </div>
           </div>
         </div>
