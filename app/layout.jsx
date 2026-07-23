@@ -39,7 +39,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <head>
         {/* ── Fonts — non-blocking load ──────────────────────────── */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
