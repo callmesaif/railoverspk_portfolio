@@ -9,6 +9,7 @@ const STATIC_PAGES = [
   { url: '/about',     priority: '0.8', changefreq: 'monthly' },
   { url: '/reviews',   priority: '0.9', changefreq: 'daily'   },
   { url: '/blogs',     priority: '0.9', changefreq: 'daily'   },
+  { url: '/locomotives', priority: '0.7', changefreq: 'weekly' },
   { url: '/contact',   priority: '0.6', changefreq: 'yearly'  },
   { url: '/privacy',   priority: '0.3', changefreq: 'yearly'  },
   { url: '/terms',     priority: '0.3', changefreq: 'yearly'  },
@@ -44,7 +45,7 @@ export default async function sitemap() {
     console.error('Sitemap: could not fetch blog posts', err);
   }
 
-  // Dynamic train reviews from Firestore — THIS WAS MISSING
+  // Dynamic train reviews from Firestore
   let reviewRoutes = [];
   try {
     const q = query(collection(db, 'reviews'), where('published', '==', true));
@@ -62,10 +63,8 @@ export default async function sitemap() {
     console.error('Sitemap: could not fetch reviews', err);
   }
 
-  return [...staticRoutes, ...blogRoutes, ...reviewRoutes];
-}
-
-let locoRoutes = [];
+  // Dynamic locomotives from Firestore
+  let locoRoutes = [];
   try {
     const q = query(collection(db, 'locomotives'), where('published', '==', true));
     const snap = await getDocs(q);
@@ -82,4 +81,6 @@ let locoRoutes = [];
     console.error('Sitemap: could not fetch locomotives', err);
   }
 
+  // Single return — combines all routes
   return [...staticRoutes, ...blogRoutes, ...reviewRoutes, ...locoRoutes];
+}
