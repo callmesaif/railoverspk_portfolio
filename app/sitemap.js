@@ -64,3 +64,22 @@ export default async function sitemap() {
 
   return [...staticRoutes, ...blogRoutes, ...reviewRoutes];
 }
+
+let locoRoutes = [];
+  try {
+    const q = query(collection(db, 'locomotives'), where('published', '==', true));
+    const snap = await getDocs(q);
+    locoRoutes = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        url: `${BASE_URL}/locomotives/${doc.id}`,
+        lastModified: data.updatedAt?.toDate?.()?.toISOString?.() || today,
+        changeFrequency: 'monthly',
+        priority: 0.6,
+      };
+    });
+  } catch (err) {
+    console.error('Sitemap: could not fetch locomotives', err);
+  }
+
+  return [...staticRoutes, ...blogRoutes, ...reviewRoutes, ...locoRoutes];

@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
   { href: '/contact',  label: 'Contact'  },
+  { href: '/locomotives', label: 'Locomotives' },
 ];
 
 const SOCIALS = [

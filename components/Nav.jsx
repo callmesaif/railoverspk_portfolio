@@ -11,6 +11,7 @@ const links = [
   { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
   { href: '/contact',  label: 'Contact'  },
+  { href: '/locomotives', label: 'Locomotives' },
 ];
 
 export default function Nav() {
