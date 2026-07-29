@@ -10,8 +10,8 @@ const links = [
   { href: '/about',    label: 'About'    },
   { href: '/reviews',  label: 'Reviews'  },
   { href: '/blogs',    label: 'Blog'     },
-  { href: '/contact',  label: 'Contact'  },
   { href: '/locomotives', label: 'Locomotives' },
+  { href: '/contact',  label: 'Contact'  },
 ];
 
 export default function Nav() {

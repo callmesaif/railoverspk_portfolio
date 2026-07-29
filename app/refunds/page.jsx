@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Pakistan Railways Refund Policy — Ticket Cancellation Guide | RaiLoversPK',
-  description: 'Complete guide to Pakistan Railways ticket refund and cancellation policy — deduction slabs, how to claim refunds for online and counter tickets, and delay compensation rules.',
+  description: 'Official Pakistan Railways ticket refund and cancellation policy — deduction slabs for POS counter and online/RABTA tickets, verified against official PR circular.',
 };
 
 export default function RefundsPage() {
@@ -11,20 +11,28 @@ export default function RefundsPage() {
     <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
       <Nav />
 
-      {/* Header */}
       <div className="container" style={{ padding: '4rem 2.5rem 2rem' }}>
         <div className="eyebrow"><span className="eyebrow-line" />Traveler's Guide</div>
         <h1 className="font-display" style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: '1rem' }}>
           Refund & <span style={{ color: 'var(--accent)' }}>Cancellation</span> Policy
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.05em', maxWidth: '560px', lineHeight: 1.7 }}>
-          A plain-language guide to how Pakistan Railways handles ticket cancellations and refunds — for both counter (POS) and online/app bookings.
+          A plain-language guide to how Pakistan Railways handles ticket cancellations and refunds — for both counter (POS) and online/RABTA bookings.
         </p>
       </div>
 
-      {/* Content */}
       <article className="container" style={{ maxWidth: '780px', padding: '0 2.5rem 5rem' }}>
         <div style={DIVIDER} />
+
+        {/* Verified badge */}
+        <div style={{ background: 'rgba(63,202,122,0.08)', border: '1px solid rgba(63,202,122,0.25)', borderRadius: '16px', padding: '16px 20px', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3fca7a', marginBottom: '6px' }}>
+            ✓ Officially Referenced
+          </div>
+          <p style={{ fontSize: '13px', lineHeight: 1.7, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+            This policy is verified against an official Pakistan Railways circular — <strong style={{ color: 'var(--text)' }}>No.573-KAC/6-RTA/Rabta/2023-2024</strong>, issued by the Divisional Office Karachi (dated January 28, 2025), referencing CCM Office Lahore letter No.180-MC/RABTA/Refund Policy dated 11/05/2024.
+          </p>
+        </div>
 
         {/* Disclaimer */}
         <div style={{ background: 'rgba(255,180,50,0.08)', border: '1px solid rgba(255,180,50,0.25)', borderRadius: '16px', padding: '16px 20px', marginBottom: '2.5rem' }}>
@@ -32,15 +40,15 @@ export default function RefundsPage() {
             ⚠ Important Note
           </div>
           <p style={{ fontSize: '13px', lineHeight: 1.7, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-            This page summarizes Pakistan Railways' publicly stated refund policy for general guidance only. Rules can change without notice — always confirm the current policy at your booking counter or on the{' '}
+            Policies can be revised by Pakistan Railways at any time. Always confirm the current policy at your booking counter or on the{' '}
             <a href="https://www.pakrail.gov.pk" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>official Pakistan Railways website</a>{' '}
             before relying on it. RaiLoversPK is an independent content platform and is not affiliated with Pakistan Railways.
           </p>
         </div>
 
-        {/* Section: Deduction Slabs */}
-        <Section title="Cancellation Deduction Slabs">
-          Pakistan Railways uses a tiered deduction system — the closer you cancel to departure time, the more is deducted from your refund. This applies to both counter (Point of Sale) and online/app bookings made through the Pak Rail Mobile app or website.
+        {/* POS Tickets */}
+        <Section title="POS (Counter) Tickets — Before Departure">
+          For tickets bought at Point of Sale counters, refunds follow this tiered deduction schedule based on how early you cancel:
 
           <div style={{ overflowX: 'auto', marginTop: '1.25rem' }}>
             <table style={TABLE}>
@@ -54,44 +62,56 @@ export default function RefundsPage() {
                 <tr><td style={TD}>48 hours or more</td><td style={{...TD, color: '#3fca7a', fontWeight: 700}}>90%</td></tr>
                 <tr><td style={TD}>24 to 48 hours</td><td style={{...TD, color: 'var(--accent)', fontWeight: 700}}>80%</td></tr>
                 <tr><td style={TD}>Within 24 hours</td><td style={{...TD, color: '#ffb432', fontWeight: 700}}>70%</td></tr>
-                <tr><td style={TD}>Within ~90 minutes / 2 hours</td><td style={{...TD, color: '#f97070', fontWeight: 700}}>50%</td></tr>
-                <tr><td style={TD}>After train departs</td><td style={{...TD, color: '#f97070', fontWeight: 700}}>No refund</td></tr>
               </tbody>
             </table>
           </div>
         </Section>
 
-        {/* Section: Delay Compensation */}
-        <Section title="If Your Train Is Delayed">
-          If a train is cancelled or delayed by <strong style={{ color: 'var(--text)' }}>6 hours or more</strong>, passengers are generally entitled to a full refund with no deductions. To claim this, you typically need to submit a written application and get it countersigned by the station master confirming the delay — this can usually be sent to the CCM (Chief Commercial Manager) office.
-        </Section>
-
-        {/* Section: How to claim - Counter */}
-        <Section title="Claiming a Refund — Counter (POS) Tickets">
+        {/* POS after departure */}
+        <Section title="POS Tickets — After Departure">
           <ul style={LIST}>
-            <li>Refunds for counter-purchased tickets are only issued at the <strong style={{ color: 'var(--text)' }}>same counter</strong> where the ticket was bought.</li>
-            <li>Bring your <strong style={{ color: 'var(--text)' }}>original ticket</strong> and a <strong style={{ color: 'var(--text)' }}>copy of your CNIC</strong>.</li>
-            <li>You'll receive a cancellation slip along with your refund.</li>
-            <li>No refund will be processed without a valid cancellation confirmation from Pakistan Railways.</li>
+            <li>If cancelled <strong style={{ color: 'var(--text)' }}>within 2 hours after</strong> the train's departure, you can still receive a <strong style={{ color: '#3fca7a' }}>50% refund</strong>.</li>
+            <li>If the train is <strong style={{ color: 'var(--text)' }}>cancelled or delayed by more than 6 hours</strong>, passengers are entitled to a <strong style={{ color: '#3fca7a' }}>full refund</strong>.</li>
+            <li>Refunds for POS tickets are only issued at the <strong style={{ color: 'var(--text)' }}>same counter</strong> where the ticket was purchased.</li>
           </ul>
         </Section>
 
-        {/* Section: How to claim - Online */}
-        <Section title="Claiming a Refund — Online / App Bookings">
+        {/* Online/RABTA Tickets */}
+        <Section title="Online / RABTA App Tickets — Before Departure">
+          Online tickets follow the <strong style={{ color: 'var(--text)' }}>same percentage slabs</strong> as counter tickets, but the process and after-departure rules are different:
+
+          <div style={{ overflowX: 'auto', marginTop: '1.25rem' }}>
+            <table style={TABLE}>
+              <thead>
+                <tr>
+                  <th style={TH}>Cancelled Before Departure</th>
+                  <th style={TH}>Refund You Receive</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style={TD}>48 hours or more</td><td style={{...TD, color: '#3fca7a', fontWeight: 700}}>90%</td></tr>
+                <tr><td style={TD}>24 to 48 hours</td><td style={{...TD, color: 'var(--accent)', fontWeight: 700}}>80%</td></tr>
+                <tr><td style={TD}>Within 24 hours</td><td style={{...TD, color: '#ffb432', fontWeight: 700}}>70%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <Section title="Online / RABTA Tickets — Key Differences From POS">
           <ul style={LIST}>
-            <li>Open the Pak Rail Mobile app or website and log in with the mobile number used for booking.</li>
-            <li>Go to your booking history and select the ticket you want to cancel.</li>
-            <li>The system shows your exact refund amount — including all deductions — before you confirm.</li>
-            <li>Refunds are returned via the same payment method used (card, JazzCash, EasyPaisa, etc.), subject to your bank/wallet's own processing time.</li>
+            <li><strong style={{ color: '#f97070' }}>No refund</strong> is given once the train has departed — unlike POS tickets which still get 50% within 2 hours.</li>
+            <li>Cancellation is <strong style={{ color: '#f97070' }}>not allowed</strong> when departure is less than <strong style={{ color: 'var(--text)' }}>1 hour 30 minutes</strong> away.</li>
+            <li>Refunds are returned <strong style={{ color: 'var(--text)' }}>only</strong> through the original payment method used at booking (card, wallet, etc.) — cannot be claimed in cash at a counter.</li>
+            <li>These same rules apply to tickets purchased via TVM (Ticket Vending Machines).</li>
           </ul>
         </Section>
 
-        {/* Section: Non-refundable */}
-        <Section title="What's Never Refundable">
+        {/* How to claim - Counter */}
+        <Section title="Claiming a POS Refund — What You Need">
           <ul style={LIST}>
-            <li>Per-seat insurance and Dam Fund charges are deducted automatically and are non-refundable.</li>
-            <li>Service charges applied by your payment provider (card network, mobile wallet) are also non-refundable.</li>
-            <li>Tickets cannot be cancelled once the train chart has been prepared for departure.</li>
+            <li>Your <strong style={{ color: 'var(--text)' }}>original ticket</strong>.</li>
+            <li>A <strong style={{ color: 'var(--text)' }}>copy of your CNIC</strong>.</li>
+            <li>You'll receive a cancellation slip along with your refund — one copy is retained by the reservation staff and attached to their refund register.</li>
           </ul>
         </Section>
 
