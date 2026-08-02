@@ -1,28 +1,35 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import StoryViewer from './StoryViewer';
 
 export default function StoriesBar() {
   const [stories, setStories] = useState([]);
-  const [activeIdx, setActiveIdx] = useState(null); // null = closed
+  const [activeIdx, setActiveIdx] = useState(null);
 
   useEffect(() => {
-    // Only fetch stories that haven't expired yet
     const q = query(
       collection(db, 'stories'),
-      where('published', '==', true),
-      where('expiresAt', '>', Timestamp.now())
+      where('published', '==', true)
     );
+
     const unsub = onSnapshot(q, snap => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      const now = Date.now();
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(s => {
+          const exp = s.expiresAt?.toMillis?.();
+          return exp ? exp > now : true;
+        })
+        .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
       setStories(data);
-    }, () => {
-      // If composite index isn't ready yet, fail silently — bar just won't show
+    }, (error) => {
+      console.error('Stories error:', error);
       setStories([]);
     });
+
     return unsub;
   }, []);
 
