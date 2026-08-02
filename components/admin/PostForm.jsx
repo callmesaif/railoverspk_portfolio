@@ -1,7 +1,9 @@
+// components/admin/PostForm.jsx
+
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 
@@ -29,6 +31,7 @@ export default function PostForm({ existing, id }) {
   const [uploading,  setUploading]  = useState(false);
   const [uploadPct,  setUploadPct]  = useState(0);
   const [error,      setError]      = useState('');
+  const [storyMsg,   setStoryMsg]   = useState(''); // ← story status message
 
   async function handleImageUpload(e) {
     const file = e.target.files?.[0];
@@ -52,13 +55,61 @@ export default function PostForm({ existing, id }) {
     }
   }
 
+  // ── Auto Story Creator ──────────────────────────────────────
+  async function createAutoStory(postTitle, postCoverImage, postVideoUrl) {
+    try {
+      // Agar cover image nahi hai toh story mat banao
+      if (!postCoverImage && !postVideoUrl) return;
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Video URL se YouTube thumbnail banao agar video hai
+      function getYtThumb(url) {
+        if (!url) return null;
+        const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+        if (short) return `https://img.youtube.com/vi/${short[1]}/hqdefault.jpg`;
+        const long = url.match(/[?&v=\/embed\/]([a-zA-Z0-9_-]{11})/);
+        if (long) return `https://img.youtube.com/vi/${long[1]}/hqdefault.jpg`;
+        return null;
+      }
+
+      const ytThumb = getYtThumb(postVideoUrl);
+      const storyThumb = postCoverImage || ytThumb;
+
+      // Cloudinary video URL nahi hai toh story mein video nahi hogi
+      // Story sirf image-based rahegi blog posts ke liye
+      await addDoc(collection(db, 'stories'), {
+        videoUrl:     postVideoUrl || '',   // agar YouTube link hai toh empty rahega (Cloudinary chahiye video ke liye)
+        thumbnailUrl: storyThumb || '',
+        caption:      `📝 New Post: ${postTitle}`,
+        authorName:   'RaiLoversPK',
+        source:       'auto-blog',          // identify karne ke liye ke auto bani hai
+        published:    true,
+        createdAt:    serverTimestamp(),
+        expiresAt:    Timestamp.fromDate(expiresAt),
+      });
+
+      setStoryMsg('✓ Story auto-created!');
+      setTimeout(() => setStoryMsg(''), 3000);
+    } catch (err) {
+      console.error('Auto story failed:', err);
+      // Story fail hone se post save nahi rukegi
+    }
+  }
+  // ────────────────────────────────────────────────────────────
+
   async function handleSave(pub = null) {
     if (!title.trim()) { setError('Title is required.'); return; }
     setError(''); setSaving(true);
+
+    const isPublishing = pub === true;
+    const wasAlreadyPublished = existing?.published === true;
+
     try {
       const data = {
         title:      title.trim(),
-        content,                        // HTML from Tiptap
+        content,
         coverImage: coverImage.trim(),
         tags:       tags.split(',').map(t => t.trim()).filter(Boolean),
         date,
@@ -66,12 +117,19 @@ export default function PostForm({ existing, id }) {
         published:  pub !== null ? pub : published,
         updatedAt:  serverTimestamp(),
       };
+
       if (id) {
         await setDoc(doc(db, 'posts', id), data, { merge: true });
       } else {
         data.createdAt = serverTimestamp();
         await addDoc(collection(db, 'posts'), data);
       }
+
+      // ── Auto story: sirf tab banao jab pehli baar publish ho ──
+      if (isPublishing && !wasAlreadyPublished) {
+        await createAutoStory(title.trim(), coverImage.trim(), videoUrl.trim());
+      }
+
       router.push('/admin/posts');
     } catch (err) {
       setError('Save failed: ' + err.message);
@@ -83,6 +141,21 @@ export default function PostForm({ existing, id }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {error && <div style={ERROR}>{error}</div>}
+
+      {/* Story auto-create success message */}
+      {storyMsg && (
+        <div style={{
+          background: 'rgba(63,202,122,0.1)',
+          border: '1px solid rgba(63,202,122,0.25)',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          fontSize: '13px',
+          color: '#3fca7a',
+          fontWeight: 600,
+        }}>
+          🚂 {storyMsg}
+        </div>
+      )}
 
       <div className="rl-form-grid">
 
@@ -155,6 +228,19 @@ export default function PostForm({ existing, id }) {
           <Field label="Publish Date">
             <input type="date" value={date} onChange={e => setDate(e.target.value)} style={INPUT} />
           </Field>
+
+          {/* Auto Story Info */}
+          <div style={{
+            background: 'rgba(30,144,255,0.06)',
+            border: '1px solid rgba(30,144,255,0.2)',
+            borderRadius: '12px',
+            padding: '14px 16px',
+            fontSize: '12px',
+            color: 'rgba(255,255,255,0.6)',
+            lineHeight: 1.6,
+          }}>
+            🚂 <strong style={{ color: '#1E90FF' }}>Auto Story:</strong> Jab aap pehli baar post publish karenge, ek story automatically 24 hours ke liye create ho jayegi.
+          </div>
 
           <Field label="Status">
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>

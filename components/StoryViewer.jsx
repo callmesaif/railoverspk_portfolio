@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const STORY_DURATION = 8000;
+const STORY_DURATION = 60000;
 
 export default function StoryViewer({ stories, startIdx, onClose }) {
   const [idx, setIdx] = useState(startIdx);
