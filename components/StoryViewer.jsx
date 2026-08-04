@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const STORY_DURATION = 60000;
+const STORY_DURATION = 60000; // 60 seconds
 
 export default function StoryViewer({ stories, startIdx, onClose }) {
   const [idx, setIdx] = useState(startIdx);
@@ -25,14 +25,13 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
     if (idx > 0) setIdx(i => i - 1);
   }, [idx]);
 
-  // Progress bar animation
   useEffect(() => {
     setProgress(0);
     startTimeRef.current = Date.now();
     pausedRef.current = false;
 
-    // Audio unmute karo jab story change ho
-    if (videoRef.current) {
+    // Sirf video ho tab play karo
+    if (videoRef.current && story?.videoUrl) {
       videoRef.current.muted = false;
       videoRef.current.volume = 1;
       videoRef.current.play().catch(() => {});
@@ -55,9 +54,8 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
     rafRef.current = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(rafRef.current);
-  }, [idx, goNext]);
+  }, [idx, goNext, story?.videoUrl]);
 
-  // Keyboard navigation
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') onClose();
@@ -68,7 +66,6 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [goNext, goPrev, onClose]);
 
-  // Body scroll lock
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -81,7 +78,9 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
 
   function handleRelease() {
     pausedRef.current = false;
-    if (videoRef.current) videoRef.current.play().catch(() => {});
+    if (videoRef.current && story?.videoUrl) {
+      videoRef.current.play().catch(() => {});
+    }
   }
 
   if (!story) return null;
@@ -92,10 +91,9 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
       background: '#000',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      {/* Story container — strict 9:16 */}
       <div style={{
         position: 'relative',
-        width: 'min(100vw, calc(100vh * 9 / 16))',  // ← 9:16 ratio fix
+        width: 'min(100vw, calc(100vh * 9 / 16))',
         height: '100vh',
         background: '#000',
         overflow: 'hidden',
@@ -145,19 +143,30 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
           }}>✕</button>
         </div>
 
-        {/* Video — NO muted, proper fill */}
-        <video
-          ref={videoRef}
-          src={story.videoUrl}
-          autoPlay
-          playsInline
-          onEnded={goNext}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',   // ← video poora fill karega
-          }}
-        />
+        {/* ── Video ya Image ── */}
+        {story.videoUrl ? (
+          <video
+            ref={videoRef}
+            src={story.videoUrl}
+            autoPlay
+            playsInline
+            onEnded={goNext}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : story.thumbnailUrl ? (
+          <img
+            src={story.thumbnailUrl}
+            alt={story.caption || ''}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            background: 'var(--bg2)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '4rem',
+          }}>🚂</div>
+        )}
 
         {/* Caption */}
         {story.caption && (
@@ -165,6 +174,9 @@ export default function StoryViewer({ stories, startIdx, onClose }) {
             position: 'absolute', bottom: '24px', left: '16px', right: '16px',
             zIndex: 10, fontSize: '14px', fontWeight: 600, color: '#fff',
             textShadow: '0 1px 4px rgba(0,0,0,0.6)', lineHeight: 1.4,
+            background: 'rgba(0,0,0,0.4)',
+            padding: '10px 14px', borderRadius: '12px',
+            backdropFilter: 'blur(4px)',
           }}>
             {story.caption}
           </div>
