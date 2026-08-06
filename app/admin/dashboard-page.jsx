@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAdmin } from '@/components/admin/AdminAuthProvider';
+import VercelStatus from '@/components/admin/VercelStatus';
 
 export default function AdminDashboard() {
   const { user }            = useAdmin();
@@ -41,6 +42,11 @@ export default function AdminDashboard() {
           <Link href="/admin/reviews/new" style={BTN_PRIMARY}>+ New Review</Link>
           <Link href="/admin/polls/new"   style={BTN_GHOST}>+ New Poll</Link>
         </div>
+      </div>
+
+      {/* Vercel Status Widget */}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <VercelStatus />
       </div>
 
       {/* Stats */}
