@@ -6,6 +6,18 @@ import Nav from '@/components/Nav';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+// ── Helper function to strip HTML tags cleanly ──
+function stripHtml(html) {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
 export default function BlogPage() {
   const [posts,      setPosts]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -46,6 +58,7 @@ export default function BlogPage() {
 
   // Split: first post is hero, rest are grid
   const [hero, ...rest] = filtered;
+  const heroExcerpt = hero ? stripHtml(hero.content) : '';
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
@@ -129,7 +142,7 @@ export default function BlogPage() {
                 </div>
                 <h2 style={HERO_TITLE}>{hero.title}</h2>
                 <p style={HERO_EXCERPT}>
-                  {hero.content?.slice(0, 160)}{hero.content?.length > 160 ? '…' : ''}
+                  {heroExcerpt.slice(0, 160)}{heroExcerpt.length > 160 ? '…' : ''}
                 </p>
                 <div style={HERO_META}>
                   <span>{hero.date}</span>
@@ -155,6 +168,8 @@ export default function BlogPage() {
 /* ── Sub-components ──────────────────────────── */
 
 function PostCard({ post }) {
+  const cleanExcerpt = stripHtml(post.content);
+
   return (
     <Link href={`/blogs/${post.id}`} style={CARD}>
       <div style={{ position: 'relative', height: '180px', overflow: 'hidden', flexShrink: 0 }}>
@@ -173,7 +188,7 @@ function PostCard({ post }) {
           {(post.tags || []).slice(0, 2).map(t => <TagPill key={t} label={t} />)}
         </div>
         <h3 style={CARD_TITLE}>{post.title}</h3>
-        <p style={CARD_EXCERPT}>{post.content?.slice(0, 100)}{post.content?.length > 100 ? '…' : ''}</p>
+        <p style={CARD_EXCERPT}>{cleanExcerpt.slice(0, 100)}{cleanExcerpt.length > 100 ? '…' : ''}</p>
         <div style={CARD_META}>{post.date}</div>
       </div>
     </Link>
