@@ -7,7 +7,6 @@ import Ticker from '@/components/Ticker';
 import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import StoriesBar from '@/components/StoriesBar';
 import TrainStatusBanner from '@/components/TrainStatusBanner';
 
 const STATS = [
@@ -105,7 +104,6 @@ export default function HomePage() {
     <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <Nav />
       <TrainStatusBanner />
-      <StoriesBar />
 
       {/* ── Hero ─────────────────────────────────── */}
       <section className="rl-hero">
