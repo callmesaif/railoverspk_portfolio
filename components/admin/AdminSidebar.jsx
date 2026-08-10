@@ -6,12 +6,12 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 const NAV = [
-  { href: '/admin',               label: 'Dashboard',    icon: '▦' },
-  { href: '/admin/posts',         label: 'Blog Posts',   icon: '✎' },
-  { href: '/admin/reviews',       label: 'Reviews',      icon: '★' },
-  { href: '/admin/locomotives',   label: 'Locomotives',  icon: '🚂' },
-  { href: '/admin/stories',       label: 'Stories',      icon: '◎' },
-  { href: '/admin/train-status',  label: 'Train Status', icon: '🚦' },
+  { href: '/admin',              label: 'Dashboard',    icon: '▦' },
+  { href: '/admin/posts',        label: 'Blog Posts',   icon: '✎' },
+  { href: '/admin/reviews',      label: 'Reviews',      icon: '★' },
+  { href: '/admin/trains',       label: 'Trains',       icon: '🚆' }, // ← add karo
+  { href: '/admin/locomotives',  label: 'Locomotives',  icon: '🚂' },
+  { href: '/admin/train-status', label: 'Train Status', icon: '🚦' },
 ];
 
 const SITE_LINKS = [

@@ -81,6 +81,20 @@ export default async function sitemap() {
     console.error('Sitemap: could not fetch locomotives', err);
   }
 
-  // Single return — combines all routes
-  return [...staticRoutes, ...blogRoutes, ...reviewRoutes, ...locoRoutes];
+  // Dynamic trains
+let trainRoutes = [];
+try {
+  const q = query(collection(db, 'trains'), where('published', '==', true));
+  const snap = await getDocs(q);
+  trainRoutes = snap.docs.map(doc => ({
+    url: `${BASE_URL}/trains/${doc.id}`,
+    lastModified: doc.data().updatedAt?.toDate?.()?.toISOString?.() || today,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+} catch (err) {
+  console.error('Sitemap: trains fetch failed', err);
+}
+
+return [...staticRoutes, ...blogRoutes, ...reviewRoutes, ...locoRoutes, ...trainRoutes];
 }

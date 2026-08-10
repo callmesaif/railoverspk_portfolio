@@ -6,12 +6,13 @@ import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 
 const links = [
-  { href: '/',         label: 'Home'     },
-  { href: '/about',    label: 'About'    },
-  { href: '/reviews',  label: 'Reviews'  },
-  { href: '/blogs',    label: 'Blog'     },
+  { href: '/',         label: 'Home'        },
+  { href: '/about',    label: 'About'       },
+  { href: '/trains',   label: 'Trains'      }, // ← add karo
+  { href: '/reviews',  label: 'Reviews'     },
+  { href: '/blogs',    label: 'Blog'        },
   { href: '/locomotives', label: 'Locomotives' },
-  { href: '/contact',  label: 'Contact'  },
+  { href: '/contact',  label: 'Contact'     },
 ];
 
 export default function Nav() {
