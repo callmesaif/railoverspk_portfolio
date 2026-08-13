@@ -1,19 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Prevent Next.js internal trailing slash conflicts
-  skipTrailingSlashRedirect: true,
+  // Automatically handles trailing slash removal globally without redirect loops
+  trailingSlash: false,
 
   // ── Redirects — old URLs ko new pe bhejo ────────────────────────────
   async redirects() {
     return [
-      // 1. Automatic Trailing Slash Removal for ALL routes (including dynamic blogs/reviews)
-      {
-        source: '/:path*/',
-        destination: '/:path*',
-        permanent: true,
-      },
-
-      // 2. Old pages jo ab exist nahi karti
+      // Old pages jo ab exist nahi karti
       { source: '/blog',               destination: '/blogs',    permanent: true },
       { source: '/vlogs',              destination: '/blogs',    permanent: true },
       { source: '/home',               destination: '/',         permanent: true },
@@ -27,7 +20,7 @@ const nextConfig = {
       { source: '/updates',            destination: '/blogs',    permanent: true },
       { source: '/gallery',            destination: '/',         permanent: true },
 
-      // 3. Old review slug format (named slugs)
+      // Old review slug format (named slugs)
       { source: '/reviews/mehran',      destination: '/reviews', permanent: true },
       { source: '/reviews/greenline',   destination: '/reviews', permanent: true },
       { source: '/reviews/karachi',     destination: '/reviews', permanent: true },
@@ -39,7 +32,7 @@ const nextConfig = {
       { source: '/reviews/karakoram',   destination: '/reviews', permanent: true },
       { source: '/reviews/subakkharam', destination: '/reviews', permanent: true },
 
-      // 4. Wildcards
+      // Wildcards
       { source: '/offers/:path*',       destination: '/',        permanent: true },
       { source: '/updates/:path*',      destination: '/blogs',   permanent: true },
     ];
