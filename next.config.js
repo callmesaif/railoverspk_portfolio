@@ -1,16 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Prevent Next.js internal trailing slash conflicts
+  skipTrailingSlashRedirect: true,
 
   // ── Redirects — old URLs ko new pe bhejo ────────────────────────────
   async redirects() {
     return [
-      // Old pages jo ab exist nahi karti
+      // 1. Automatic Trailing Slash Removal for ALL routes (including dynamic blogs/reviews)
+      {
+        source: '/:path*/',
+        destination: '/:path*',
+        permanent: true,
+      },
+
+      // 2. Old pages jo ab exist nahi karti
       { source: '/blog',               destination: '/blogs',    permanent: true },
       { source: '/vlogs',              destination: '/blogs',    permanent: true },
       { source: '/home',               destination: '/',         permanent: true },
       { source: '/community',          destination: '/',         permanent: true },
       { source: '/community/view',     destination: '/',         permanent: true },
-      { source: '/community/view/',    destination: '/',         permanent: true },
       { source: '/heritage',           destination: '/about',    permanent: true },
       { source: '/schedule',           destination: '/reviews',  permanent: true },
       { source: '/planner',            destination: '/reviews',  permanent: true },
@@ -19,21 +27,7 @@ const nextConfig = {
       { source: '/updates',            destination: '/blogs',    permanent: true },
       { source: '/gallery',            destination: '/',         permanent: true },
 
-      // Trailing slash fix
-      { source: '/reviews/',           destination: '/reviews',     permanent: true },
-      { source: '/blogs/',             destination: '/blogs',        permanent: true },
-      { source: '/contact/',           destination: '/contact',      permanent: true },
-      { source: '/privacy/',           destination: '/privacy',      permanent: true },
-      { source: '/terms/',             destination: '/terms',        permanent: true },
-      { source: '/refunds/',           destination: '/refunds',      permanent: true },
-      { source: '/about/',             destination: '/about',        permanent: true },
-      { source: '/locomotives/',       destination: '/locomotives',  permanent: true },
-      { source: '/heritage/',          destination: '/about',        permanent: true },
-      { source: '/schedule/',          destination: '/reviews',      permanent: true },
-      { source: '/planner/',           destination: '/reviews',      permanent: true },
-      { source: '/fares/',             destination: '/refunds',      permanent: true },
-
-      // Old review slug format (named slugs)
+      // 3. Old review slug format (named slugs)
       { source: '/reviews/mehran',      destination: '/reviews', permanent: true },
       { source: '/reviews/greenline',   destination: '/reviews', permanent: true },
       { source: '/reviews/karachi',     destination: '/reviews', permanent: true },
@@ -45,10 +39,8 @@ const nextConfig = {
       { source: '/reviews/karakoram',   destination: '/reviews', permanent: true },
       { source: '/reviews/subakkharam', destination: '/reviews', permanent: true },
 
-      // Offers section — wildcard
+      // 4. Wildcards
       { source: '/offers/:path*',       destination: '/',        permanent: true },
-
-      // Updates section — wildcard
       { source: '/updates/:path*',      destination: '/blogs',   permanent: true },
     ];
   },
