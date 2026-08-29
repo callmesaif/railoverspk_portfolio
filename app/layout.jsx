@@ -7,7 +7,7 @@ import WhatsAppChat from '@/components/WhatsAppChat';
 import CopyProtection from '@/components/CopyProtection';
 
 export const metadata = {
-  title: 'RaiLoversPK — Pakistan Railway Vlogger & Filmmaker',
+  title: 'RaiLoversPK | Pakistan Railway Vlogger & Filmmaker',
   description: "Pakistan's leading railway vlogger. Cinematic train reviews, journey guides, and railway documentation by RaiLoversPK.",
   keywords: 'Pakistan Railways, train vlog, railway review, Pakistan travel, RaiLoversPK, Railspk, train journey, railway documentary, train photography, railway enthusiast, Pakistan train travel, RaiLoversPK channel, train vlogging, railway exploration, Pakistan rail network, train adventures, RaiLoversPK videos',
   icons: {
@@ -24,7 +24,7 @@ export const metadata = {
   manifest: '/site.webmanifest',
   metadataBase: new URL('https://therails.pk'),
   openGraph: {
-    title: 'RaiLoversPK',
+    title: 'RaiLoversPK | Pakistan Railway Vlogger & Filmmaker',
     description: "Pakistan's leading railway vlogger and filmmaker — cinematic train reviews and journey vlogs from Pakistan.",
     url: 'https://therails.pk',
     siteName: 'RaiLoversPK',

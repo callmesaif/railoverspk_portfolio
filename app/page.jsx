@@ -13,7 +13,7 @@ const STATS = [
   { num: '2M+',  label: 'Total Views'    },
   { num: '10+',  label: 'Train Reviews'  },
   { num: '6.5K', label: 'Subscribers'    },
-  { num: '5+',   label: 'Years On Track' },
+  { num: '7+',   label: 'Years On Track' },
 ];
 
 const VLOGS = [

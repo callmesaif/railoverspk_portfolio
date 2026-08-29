@@ -6,8 +6,8 @@ const TAGS = [
   { label: 'Filmmaker',        accent: true  },
   { label: 'Train Reviewer',   accent: true  },
   { label: 'Pakistan Railways', accent: false },
-  { label: 'Travel Blogger',   accent: false },
-  { label: 'YouTube Creator',  accent: false },
+  { label: 'Travel Blogger',   accent: true  },
+  { label: 'YouTube Creator',  accent: true  },
   { label: 'Next.js Dev',      accent: false },
 ];
 
