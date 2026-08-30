@@ -1,664 +1,321 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import Link from 'next/link';
 import Nav from '@/components/Nav';
-import Footer from '@/components/Footer';
-import TrainStatusBanner from '@/components/TrainStatusBanner';
-import TrainLeaderboard from '@/components/TrainLeaderboard';
 import Ticker from '@/components/Ticker';
+import TrainLeaderboard from '@/components/TrainLeaderboard';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import TrainStatusBanner from '@/components/TrainStatusBanner';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const STATS = [
+  { num: '2M+',  label: 'Total Views'    },
+  { num: '10+',  label: 'Train Reviews'  },
+  { num: '6.5K', label: 'Subscribers'    },
+  { num: '7+',   label: 'Years On Track' },
+];
+
+const VLOGS = [
+  {
+    id: 'karakoram-express',
+    title: 'Lahore to Khanewal (لاہور سے کراچی کا سفر شدید گرمی میں) Karakoram Express',
+    meta: '42K views · Karakoram Express',
+    videoUrl: 'https://youtu.be/nHADX1DrIjU?si=vn5xP9usAntTXy27',
+    badge: 'Most Viewed',
+    featured: true,
+  },
+  {
+    id: 'green-line',
+    title: 'Bahawalpur to Lahore (بارش نے سفر کو چار چاند لگا دئیے) Greenline Express',
+    meta: '24.5K views',
+    videoUrl: 'https://youtu.be/_JX2ChSzRcE?si=E-0dQUmk4-4QWkLD',
+  },
+  {
+    id: 'shalimar-express',
+    title: 'Shalimar Express Train Journey | Lahore to Karachi | Shalimar Express Parlor Car Review 🔥',
+    meta: '2K views',
+    videoUrl: 'https://youtu.be/dhocWOcixiU',
+  },
+  {
+    id: 'sialkot-express',
+    title: 'Sialkot Express Journey: Lahore to Wazirabad | Pakistan Railways Vlog | Branch Line Train Journey',
+    meta: '1K views',
+    videoUrl: 'https://youtu.be/vdBMpDOR8VU',
+  },
+];
+
+function getYtId(url) {
+  if (!url) return null;
+  const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (short) return short[1];
+  const long = url.match(/[?&v=\/embed\/]([a-zA-Z0-9_-]{11})/);
+  return long ? long[1] : null;
+}
+
+function getYtThumb(url, quality = 'hqdefault') {
+  const id = getYtId(url);
+  return id ? `https://img.youtube.com/vi/${id}/${quality}.jpg` : null;
+}
 
 export default function HomePage() {
-  const router = useRouter();
-
-  // Search States
-  const [fromStation, setFromStation] = useState('');
-  const [toStation, setToStation] = useState('');
-  const [searchName, setSearchName] = useState('');
-
-  // Data States
-  const [trains, setTrains] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const todayIndex = new Date().getDay();
-  const todayName = DAYS[todayIndex];
-  const todayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][todayIndex];
+  const [topReviews, setTopReviews] = useState([]);
 
   useEffect(() => {
-    async function loadData() {
+    async function fetchPosts() {
       try {
-        setLoading(true);
-
-        // Fetch Trains
-        const tSnap = await getDocs(query(collection(db, 'trains'), limit(6)));
-        const tList = tSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setTrains(tList);
-
-        // Fetch Published Blog Posts / Vlogs
-        const pSnap = await getDocs(
-          query(
-            collection(db, 'posts'),
-            where('published', '==', true),
-            orderBy('createdAt', 'desc'),
-            limit(3)
-          )
+        // Fetch ALL published posts first — limit AFTER sorting, not before,
+        // otherwise Firestore may return old posts before new ones exist as
+        // "first 3" in its default order.
+        const q = query(
+          collection(db, 'posts'),
+          where('published', '==', true)
         );
-        const pList = pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPosts(pList);
-      } catch (err) {
-        console.error('Error fetching home data:', err);
-      } finally {
-        setLoading(false);
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        data.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        setPosts(data.slice(0, 3)); // top 3 AFTER sorting by date
+      } catch (e) {
+        console.error('Posts fetch error:', e);
       }
     }
-    loadData();
+    fetchPosts();
   }, []);
 
-  function handleRouteSearch(e) {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (fromStation.trim()) params.append('from', fromStation.trim());
-    if (toStation.trim()) params.append('to', toStation.trim());
-    router.push(`/trains?${params.toString()}`);
-  }
-
-  function handleTrainSearch(e) {
-    e.preventDefault();
-    if (searchName.trim()) {
-      router.push(`/trains?q=${encodeURIComponent(searchName.trim())}`);
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const q = query(
+          collection(db, 'reviews'),
+          where('published', '==', true)
+        );
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setTopReviews(data);
+      } catch (e) {
+        console.error('Reviews fetch error:', e);
+      }
     }
-  }
+    fetchReviews();
+  }, []);
 
   return (
-    <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
+    <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <Nav />
       <TrainStatusBanner />
 
-      {/* ── 1. HERO SECTION ── */}
-      <section style={HERO_SECTION}>
-        <div style={HERO_BG_WRAPPER}>
+      {/* ── Hero ─────────────────────────────────── */}
+      <section className="rl-hero">
+        <div className="rl-hero-bg">
           <Image
-            src="/images/hero-bg.webp"
-            alt="Pakistan Railways Train"
+            src="https://i.ibb.co/21wQ5B9Q/hero-bg.webp"
+            alt="Pakistan Railways"
             fill
             priority
-            style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.35 }}
+            sizes="100vw"
+            quality={75}
+            style={{ objectFit: 'cover', opacity: 0.55 }}
           />
-          <div style={HERO_OVERLAY} />
+          <div className="rl-hero-overlay" />
         </div>
 
-        <div className="container" style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: '850px' }}>
-          <div style={BADGE}>
-            <span style={{ fontSize: '13px' }}>🇵🇰</span>
-            <span>Pakistan Railways Media Platform</span>
+        <div className="rl-hero-content container">
+          <div className="eyebrow">
+            <span className="eyebrow-line" />
+            Pakistan Railway Vlogger · Filmmaker
           </div>
-
-          <h1 style={HERO_TITLE}>
-            The Rails Are My <span style={{ color: 'var(--accent)' }}>Canvas</span>
+          <h1
+            className="font-display"
+            style={{ fontSize: 'clamp(4rem, 13vw, 9.5rem)', lineHeight: 0.88, textTransform: 'uppercase', marginBottom: '1.5rem' }}
+          >
+            THE RAILS<br />ARE MY{' '}
+            <span style={{ color: 'var(--accent)' }}>CANVAS</span>
           </h1>
-
-          <p style={HERO_SUBTITLE}>
-            Documenting Pakistan&apos;s railway heritage, live train status, accurate station schedules,
-            fare tables, and high-quality cinematic reviews.
+          <p style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--muted)', maxWidth: '420px', marginBottom: '2rem' }}>
+            Documenting Pakistan's railway heritage through cinematic storytelling. Every journey, every locomotive, every story — captured.
           </p>
-
-          <div style={HERO_CTA_GROUP}>
-            <Link href="/trains" style={PRIMARY_BTN}>
-              Explore Train Schedules →
-            </Link>
-            <Link href="/reviews" style={SECONDARY_BTN}>
-              Train Reviews & Ratings
-            </Link>
-          </div>
-
-          {/* ── 2. QUICK ROUTE & TRAIN FINDER CARD ── */}
-          <div style={SEARCH_BOX_CONTAINER}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)' }}>
-                🔍 Quick Train & Route Finder
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Live Directory</span>
-            </div>
-
-            <form onSubmit={handleRouteSearch} style={SEARCH_FORM}>
-              <div style={INPUT_GROUP}>
-                <label style={INPUT_LABEL}>From Station</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Karachi Cantt"
-                  value={fromStation}
-                  onChange={e => setFromStation(e.target.value)}
-                  style={INPUT_FIELD}
-                />
-              </div>
-
-              <div style={INPUT_GROUP}>
-                <label style={INPUT_LABEL}>To Station</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Lahore Jn"
-                  value={toStation}
-                  onChange={e => setToStation(e.target.value)}
-                  style={INPUT_FIELD}
-                />
-              </div>
-
-              <button type="submit" style={SEARCH_SUBMIT_BTN}>
-                Find Trains
-              </button>
-            </form>
-
-            <form onSubmit={handleTrainSearch} style={SUB_SEARCH_ROW}>
-              <input
-                type="text"
-                placeholder="Or search by Train Name or Number (e.g. 15UP Karachi Express, Green Line)..."
-                value={searchName}
-                onChange={e => setSearchName(e.target.value)}
-                style={SUB_SEARCH_INPUT}
-              />
-              <button type="submit" style={SUB_SEARCH_BTN}>
-                Search
-              </button>
-            </form>
+          <div className="rl-hero-actions">
+            <Link href="/about" className="btn-ghost">About Me</Link>
           </div>
         </div>
       </section>
 
-      {/* ── TICKER STRIP ── */}
+      {/* ── Ticker ───────────────────────────────── */}
       <Ticker />
 
-      {/* ── 3. TODAY'S TRAIN SCHEDULE GLANCE ── */}
-      <section style={{ padding: '4rem 0', borderBottom: '1px solid var(--border)' }}>
-        <div className="container">
-          <div style={SECTION_HEADER_ROW}>
-            <div>
-              <div style={SECTION_EYEBROW}>Today: {todayName}</div>
-              <h2 style={SECTION_HEADING}>Featured Train Schedules</h2>
+      {/* ── Stats ────────────────────────────────── */}
+      <div className="container">
+        <div className="rl-stats-grid">
+          {STATS.map(({ num, label }) => (
+            <div key={label} className="rl-stat-box">
+              <div className="rl-stat-num">{num}</div>
+              <div className="rl-stat-label">{label}</div>
             </div>
-            <Link href="/trains" style={VIEW_ALL_LINK}>
-              View All Trains Directory →
+          ))}
+        </div>
+      </div>
+
+      {/* ── Featured Vlogs ───────────────────────── */}
+      <section className="container" style={{ padding: '4rem 2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div className="sec-label">Featured</div>
+            <h2 className="sec-title">Top Vlogs</h2>
+          </div>
+          <Link href="/blogs" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            All blogs →
+          </Link>
+        </div>
+        <div className="rl-vlogs-grid">
+          {VLOGS.map((v) => <VlogCard key={v.id} vlog={v} />)}
+        </div>
+      </section>
+
+      {/* ── Top Rated Trains (Leaderboard) ───────── */}
+      {topReviews.length > 0 && (
+        <section className="container" style={{ padding: '0 2.5rem 4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div className="sec-label">🏆 Rankings</div>
+              <h2 className="sec-title">Top Rated Trains</h2>
+            </div>
+            <Link href="/reviews" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              All Scorecards →
             </Link>
           </div>
-
-          {loading ? (
-            <div style={GRID_3}>
-              {[1, 2, 3].map(i => (
-                <div key={i} style={{ ...CARD_BOX, minHeight: '160px', opacity: 0.5 }} />
-              ))}
-            </div>
-          ) : trains.length > 0 ? (
-            <div style={GRID_3}>
-              {trains.map(t => {
-                const schedule = t.weeklySchedule || {};
-                const runsToday = schedule[todayKey] !== false;
-
-                return (
-                  <div key={t.id} style={CARD_BOX}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={TRAIN_NUM_BADGE}>{t.trainNumber || t.number || 'EXP'}</span>
-                      <span style={{
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        padding: '3px 8px',
-                        borderRadius: '100px',
-                        background: runsToday ? 'rgba(63,202,122,0.15)' : 'rgba(239,68,68,0.15)',
-                        color: runsToday ? '#3fca7a' : '#f97070',
-                        border: `1px solid ${runsToday ? 'rgba(63,202,122,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                      }}>
-                        {runsToday ? '● Runs Today' : '○ Off Today'}
-                      </span>
-                    </div>
-
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '4px' }}>
-                      {t.name || t.trainName}
-                    </h3>
-                    <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '14px' }}>
-                      📍 {t.route || `${t.origin || 'Origin'} ➔ ${t.destination || 'Destination'}`}
-                    </p>
-
-                    <div style={META_INFO_ROW}>
-                      <div>
-                        <span style={META_LABEL}>Departure:</span>
-                        <span style={META_VALUE}>{t.departureTime || 'See table'}</span>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={META_LABEL}>Total Stops:</span>
-                        <span style={META_VALUE}>{t.stops?.length ? `${t.stops.length} Stations` : 'Multiple'}</span>
-                      </div>
-                    </div>
-
-                    <Link href={`/trains/${t.id}`} style={CARD_ACTION_BTN}>
-                      View Stops, Timings & Fares →
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={EMPTY_STATE}>
-              Train schedules are currently being compiled. Visit <Link href="/trains" style={{ color: 'var(--accent)' }}>/trains</Link> for direct list.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── 4. LEADERBOARD ── */}
-      <section style={{ padding: '4rem 0', background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-        <div className="container">
-          <TrainLeaderboard />
-        </div>
-      </section>
-
-      {/* ── 5. STATS STRIP ── */}
-      <section style={{ padding: '3rem 0', borderBottom: '1px solid var(--border)', background: 'var(--bg3)' }}>
-        <div className="container">
-          <div style={STATS_GRID}>
-            <div style={STAT_ITEM}>
-              <div style={STAT_VAL}>6M+</div>
-              <div style={STAT_LBL}>Total YouTube Views</div>
-            </div>
-            <div style={STAT_ITEM}>
-              <div style={STAT_VAL}>42K+</div>
-              <div style={STAT_LBL}>Channel Community</div>
-            </div>
-            <div style={STAT_ITEM}>
-              <div style={STAT_VAL}>80+</div>
-              <div style={STAT_LBL}>Documented Reviews</div>
-            </div>
-            <div style={STAT_ITEM}>
-              <div style={STAT_VAL}>3300 HP</div>
-              <div style={STAT_LBL}>Locomotive Sound Vault</div>
-            </div>
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '24px', padding: '1.5rem' }}>
+            <TrainLeaderboard reviews={topReviews} limit={5} compact />
           </div>
+        </section>
+      )}
+
+      {/* ── Recent Posts ─────────────────────────── */}
+      <section className="container" style={{ padding: '0 2.5rem 5rem' }}>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div className="sec-label">Writing</div>
+          <h2 className="sec-title">Recent Posts</h2>
+        </div>
+
+        {posts.length === 0 ? (
+          <div className="rl-posts-grid">
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', height: '240px', opacity: 0.5 }} />
+            ))}
+          </div>
+        ) : (
+          <div className="rl-posts-grid">
+            {posts.map((p) => <PostCard key={p.id} post={p} />)}
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <Link href="/blogs" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none' }}>
+            View All Posts →
+          </Link>
         </div>
       </section>
-
-      {/* ── 6. LATEST REVIEWS & BLOG POSTS ── */}
-      <section style={{ padding: '4rem 0' }}>
-        <div className="container">
-          <div style={SECTION_HEADER_ROW}>
-            <div>
-              <div style={SECTION_EYEBROW}>Railway Journal</div>
-              <h2 style={SECTION_HEADING}>Recent Posts & Insights</h2>
-            </div>
-            <Link href="/blogs" style={VIEW_ALL_LINK}>
-              All Posts & Reviews →
-            </Link>
-          </div>
-
-          <div style={GRID_3}>
-            {posts.length > 0 ? (
-              posts.map(post => (
-                <article key={post.id} style={BLOG_CARD}>
-                  {post.coverImage && (
-                    <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
-                      <img
-                        src={post.coverImage}
-                        alt={post.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </div>
-                  )}
-                  <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <div>
-                      <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                        {post.tags?.[0] || 'Vlog / Review'}
-                      </span>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: '6px', color: 'var(--text)', lineHeight: 1.35 }}>
-                        {post.title}
-                      </h3>
-                      {post.date && (
-                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '6px' }}>
-                          📅 {post.date}
-                        </div>
-                      )}
-                    </div>
-
-                    <Link href={`/blogs/${post.slug || post.id}`} style={{ ...CARD_ACTION_BTN, marginTop: '14px' }}>
-                      Read Article & Watch Video →
-                    </Link>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div style={{ ...EMPTY_STATE, gridColumn: 'span 3' }}>
-                Visit our <Link href="/blogs" style={{ color: 'var(--accent)' }}>Blog</Link> or <Link href="/reviews" style={{ color: 'var(--accent)' }}>Reviews</Link> for latest updates.
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <Footer />
     </main>
   );
 }
 
-// ── INLINE STYLES MATCHING THE PROJECT THEME ──
-const HERO_SECTION = {
-  position: 'relative',
-  padding: '6rem 1.5rem 4.5rem',
-  minHeight: '75vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'hidden',
-  borderBottom: '1px solid var(--border)',
-};
+/* ── VlogCard ───────────────────────────────────── */
+function VlogCard({ vlog }) {
+  const isFeatured = vlog.featured;
+  const ytId       = getYtId(vlog.videoUrl);
+  const thumb      = getYtThumb(vlog.videoUrl, isFeatured ? 'maxresdefault' : 'hqdefault');
+  const href       = vlog.videoUrl || '#';
 
-const HERO_BG_WRAPPER = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: 1,
-  background: 'var(--bg)',
-};
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        gridColumn: isFeatured ? '1 / 3' : undefined,
+        position: 'relative',
+        borderRadius: '20px',
+        overflow: 'hidden',
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        display: 'block',
+        aspectRatio: isFeatured ? '2 / 1' : '16 / 9',
+        textDecoration: 'none',
+        transition: 'transform 0.25s, border-color 0.25s',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'rgba(255,0,0,0.5)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
+    >
+      {thumb && (
+        <img
+          src={thumb}
+          alt={vlog.title}
+          loading={isFeatured ? 'eager' : 'lazy'}
+          decoding="async"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.05) 55%)' }} />
 
-const HERO_OVERLAY = {
-  position: 'absolute',
-  inset: 0,
-  background: 'radial-gradient(ellipse at center, rgba(10,10,18,0.7) 0%, rgba(10,10,18,0.95) 100%)',
-};
+      {vlog.badge && (
+        <span style={{ position: 'absolute', top: '12px', left: '12px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'var(--accent)', color: '#fff', padding: '4px 11px', borderRadius: '100px' }}>
+          {vlog.badge}
+        </span>
+      )}
 
-const BADGE = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
-  background: 'rgba(30,144,255,0.1)',
-  border: '1px solid rgba(30,144,255,0.25)',
-  padding: '6px 14px',
-  borderRadius: '100px',
-  fontSize: '11px',
-  fontWeight: 700,
-  color: 'var(--accent)',
-  marginBottom: '1.25rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-};
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: isFeatured ? '56px' : '40px', height: isFeatured ? '56px' : '40px', borderRadius: '50%', background: 'rgba(255,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(255,0,0,0.4)' }}>
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="white"><path d="M5 3l9 5-9 5V3z" /></svg>
+      </div>
 
-const HERO_TITLE = {
-  fontFamily: "'Bebas Neue', sans-serif",
-  fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
-  textTransform: 'uppercase',
-  lineHeight: 0.95,
-  letterSpacing: '0.04em',
-  marginBottom: '1.25rem',
-  color: '#ffffff',
-};
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
+        <div style={{ fontSize: isFeatured ? '18px' : '13px', fontWeight: 700, lineHeight: 1.3, marginBottom: '4px', color: '#fff' }}>{vlog.title}</div>
+        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {vlog.meta}
+          {ytId && <span style={{ color: '#f97070', fontWeight: 700 }}>▶ YouTube</span>}
+        </div>
+      </div>
+    </a>
+  );
+}
 
-const HERO_SUBTITLE = {
-  fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
-  color: 'var(--muted)',
-  lineHeight: 1.6,
-  maxWidth: '680px',
-  margin: '0 auto 2rem',
-};
-
-const HERO_CTA_GROUP = {
-  display: 'flex',
-  gap: '12px',
-  justifyContent: 'center',
-  flexWrap: 'wrap',
-  marginBottom: '2.5rem',
-};
-
-const PRIMARY_BTN = {
-  background: 'var(--accent)',
-  color: '#fff',
-  fontSize: '11px',
-  fontWeight: 900,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-  padding: '13px 28px',
-  borderRadius: '100px',
-  textDecoration: 'none',
-  transition: 'transform 0.2s, opacity 0.2s',
-  display: 'inline-block',
-};
-
-const SECONDARY_BTN = {
-  background: 'var(--bg3)',
-  color: 'var(--text)',
-  border: '1px solid var(--border)',
-  fontSize: '11px',
-  fontWeight: 800,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-  padding: '13px 26px',
-  borderRadius: '100px',
-  textDecoration: 'none',
-  display: 'inline-block',
-};
-
-const SEARCH_BOX_CONTAINER = {
-  background: 'var(--bg2)',
-  border: '1px solid var(--border)',
-  borderRadius: '20px',
-  padding: '1.5rem',
-  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-  textAlign: 'left',
-};
-
-const SEARCH_FORM = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) 140px',
-  gap: '12px',
-  alignItems: 'flex-end',
-};
-
-const INPUT_GROUP = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px',
-};
-
-const INPUT_LABEL = {
-  fontSize: '10px',
-  fontWeight: 800,
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  letterSpacing: '0.1em',
-};
-
-const INPUT_FIELD = {
-  background: 'var(--bg3)',
-  border: '1px solid var(--border)',
-  borderRadius: '10px',
-  padding: '12px 14px',
-  fontSize: '13px',
-  color: 'var(--text)',
-  outline: 'none',
-  width: '100%',
-};
-
-const SEARCH_SUBMIT_BTN = {
-  background: 'var(--accent)',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '10px',
-  padding: '12px',
-  fontSize: '11px',
-  fontWeight: 900,
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-  cursor: 'pointer',
-  height: '43px',
-};
-
-const SUB_SEARCH_ROW = {
-  marginTop: '12px',
-  paddingTop: '12px',
-  borderTop: '1px solid var(--border)',
-  display: 'flex',
-  gap: '8px',
-};
-
-const SUB_SEARCH_INPUT = {
-  flex: 1,
-  background: 'transparent',
-  border: 'none',
-  fontSize: '12px',
-  color: 'var(--muted)',
-  outline: 'none',
-};
-
-const SUB_SEARCH_BTN = {
-  background: 'var(--bg3)',
-  border: '1px solid var(--border)',
-  color: 'var(--accent)',
-  padding: '4px 12px',
-  borderRadius: '6px',
-  fontSize: '11px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const SECTION_HEADER_ROW = {
-  display: 'flex',
-  alignItems: 'flex-end',
-  justifyContent: 'space-between',
-  marginBottom: '2rem',
-  flexWrap: 'wrap',
-  gap: '12px',
-};
-
-const SECTION_EYEBROW = {
-  fontSize: '10px',
-  fontWeight: 900,
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase',
-  color: 'var(--accent)',
-  marginBottom: '4px',
-};
-
-const SECTION_HEADING = {
-  fontFamily: "'Bebas Neue', sans-serif",
-  fontSize: 'clamp(2rem, 4vw, 2.8rem)',
-  textTransform: 'uppercase',
-  lineHeight: 1,
-  color: 'var(--text)',
-  margin: 0,
-};
-
-const VIEW_ALL_LINK = {
-  fontSize: '11px',
-  fontWeight: 800,
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-  color: 'var(--accent)',
-  textDecoration: 'none',
-};
-
-const GRID_3 = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-  gap: '1.25rem',
-};
-
-const CARD_BOX = {
-  background: 'var(--bg2)',
-  border: '1px solid var(--border)',
-  borderRadius: '16px',
-  padding: '1.5rem',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'space-between',
-};
-
-const TRAIN_NUM_BADGE = {
-  fontSize: '10px',
-  fontFamily: 'monospace',
-  fontWeight: 900,
-  padding: '3px 8px',
-  borderRadius: '6px',
-  background: 'var(--bg3)',
-  border: '1px solid var(--border)',
-  color: 'var(--accent)',
-};
-
-const META_INFO_ROW = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  paddingTop: '10px',
-  borderTop: '1px solid var(--border)',
-  marginBottom: '14px',
-};
-
-const META_LABEL = {
-  display: 'block',
-  fontSize: '9px',
-  textTransform: 'uppercase',
-  color: 'var(--muted)',
-  fontWeight: 700,
-};
-
-const META_VALUE = {
-  fontSize: '12px',
-  fontWeight: 700,
-  color: 'var(--text)',
-};
-
-const CARD_ACTION_BTN = {
-  display: 'block',
-  textAlign: 'center',
-  background: 'var(--bg3)',
-  border: '1px solid var(--border)',
-  borderRadius: '8px',
-  padding: '9px',
-  fontSize: '11px',
-  fontWeight: 800,
-  color: 'var(--accent)',
-  textDecoration: 'none',
-};
-
-const STATS_GRID = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-  gap: '1.5rem',
-  textAlign: 'center',
-};
-
-const STAT_ITEM = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-
-const STAT_VAL = {
-  fontFamily: "'Bebas Neue', sans-serif",
-  fontSize: '3rem',
-  lineHeight: 1,
-  color: 'var(--accent)',
-};
-
-const STAT_LBL = {
-  fontSize: '11px',
-  fontWeight: 700,
-  color: 'var(--muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-};
-
-const BLOG_CARD = {
-  background: 'var(--bg2)',
-  border: '1px solid var(--border)',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-const EMPTY_STATE = {
-  padding: '2.5rem',
-  textAlign: 'center',
-  color: 'var(--muted)',
-  fontSize: '13px',
-  background: 'var(--bg2)',
-  borderRadius: '16px',
-  border: '1px solid var(--border)',
-};
+/* ── PostCard ────────────────────────────────────── */
+function PostCard({ post }) {
+  return (
+    <Link
+      href={`/blogs/${post.id}`}
+      style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', display: 'block', color: 'var(--text)', transition: 'transform 0.2s, border-color 0.2s' }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'var(--border2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
+    >
+      <div style={{ height: '150px', overflow: 'hidden', position: 'relative', background: 'var(--bg3)' }}>
+        {post.coverImage ? (
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            loading="lazy"
+            decoding="async"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>🚂</div>
+        )}
+      </div>
+      <div style={{ padding: '18px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          {(post.tags || []).slice(0, 2).map(t => (
+            <span key={t} style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', padding: '3px 9px', borderRadius: '100px' }}>
+              {t}
+            </span>
+          ))}
+        </div>
+        <div style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1.35, marginBottom: '8px', color: 'var(--text)' }}>
+          {post.title}
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--muted)', fontWeight: 500 }}>
+          {post.date}
+        </div>
+      </div>
+    </Link>
+  );
+}
