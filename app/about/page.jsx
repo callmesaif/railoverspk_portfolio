@@ -35,7 +35,7 @@ const TIMELINE = [
 ];
 
 export const metadata = {
-  title: 'About — RaiLoversPK',
+  title: 'About | RaiLoversPK',
   description: "The story behind Pakistan's leading railway vlogger and filmmaker.",
 };
 
