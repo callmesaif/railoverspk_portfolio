@@ -8,6 +8,7 @@ import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import TrainStatusBanner from '@/components/TrainStatusBanner';
+import LatestVlogs from '@/components/LatestVlogs';
 
 const STATS = [
   { num: '2M+',  label: 'Total Views'    },
@@ -16,48 +17,6 @@ const STATS = [
   { num: '7+',   label: 'Years On Track' },
 ];
 
-const VLOGS = [
-  {
-    id: 'karakoram-express',
-    title: 'Lahore to Khanewal (لاہور سے کراچی کا سفر شدید گرمی میں) Karakoram Express',
-    meta: '42K views · Karakoram Express',
-    videoUrl: 'https://youtu.be/nHADX1DrIjU?si=vn5xP9usAntTXy27',
-    badge: 'Most Viewed',
-    featured: true,
-  },
-  {
-    id: 'green-line',
-    title: 'Bahawalpur to Lahore (بارش نے سفر کو چار چاند لگا دئیے) Greenline Express',
-    meta: '24.5K views',
-    videoUrl: 'https://youtu.be/_JX2ChSzRcE?si=E-0dQUmk4-4QWkLD',
-  },
-  {
-    id: 'shalimar-express',
-    title: 'Shalimar Express Train Journey | Lahore to Karachi | Shalimar Express Parlor Car Review 🔥',
-    meta: '2K views',
-    videoUrl: 'https://youtu.be/dhocWOcixiU',
-  },
-  {
-    id: 'sialkot-express',
-    title: 'Sialkot Express Journey: Lahore to Wazirabad | Pakistan Railways Vlog | Branch Line Train Journey',
-    meta: '1K views',
-    videoUrl: 'https://youtu.be/vdBMpDOR8VU',
-  },
-];
-
-function getYtId(url) {
-  if (!url) return null;
-  const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-  if (short) return short[1];
-  const long = url.match(/[?&v=\/embed\/]([a-zA-Z0-9_-]{11})/);
-  return long ? long[1] : null;
-}
-
-function getYtThumb(url, quality = 'hqdefault') {
-  const id = getYtId(url);
-  return id ? `https://img.youtube.com/vi/${id}/${quality}.jpg` : null;
-}
-
 export default function HomePage() {
   const [posts, setPosts] = useState([]);
   const [topReviews, setTopReviews] = useState([]);
@@ -65,9 +24,6 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchPosts() {
       try {
-        // Fetch ALL published posts first — limit AFTER sorting, not before,
-        // otherwise Firestore may return old posts before new ones exist as
-        // "first 3" in its default order.
         const q = query(
           collection(db, 'posts'),
           where('published', '==', true)
@@ -75,7 +31,7 @@ export default function HomePage() {
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         data.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-        setPosts(data.slice(0, 3)); // top 3 AFTER sorting by date
+        setPosts(data.slice(0, 3));
       } catch (e) {
         console.error('Posts fetch error:', e);
       }
@@ -109,7 +65,7 @@ export default function HomePage() {
       <section className="rl-hero">
         <div className="rl-hero-bg">
           <Image
-            src="https://i.ibb.co/21wQ5B9Q/hero-bg.webp"
+            src="https://i.ibb.co/TDLdP6kz/hero-bg.webp"
             alt="Pakistan Railways"
             fill
             priority
@@ -156,20 +112,36 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Featured Vlogs ───────────────────────── */}
+      {/* ── Latest Vlogs ─────────────────────────── */}
       <section className="container" style={{ padding: '4rem 2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{
+          display: 'flex', alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem',
+        }}>
           <div>
-            <div className="sec-label">Featured</div>
-            <h2 className="sec-title">Top Vlogs</h2>
+            <div className="sec-label">🎬 YouTube</div>
+            <h2 className="sec-title">Latest Vlogs</h2>
           </div>
-          <Link href="/blogs" style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            All blogs →
-          </Link>
+
+          <a
+            href="https://www.youtube.com/@railoverspkofficial"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: '#f97070',
+              textDecoration: 'none', display: 'flex',
+              alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+            </svg>
+            View Channel →
+          </a>
         </div>
-        <div className="rl-vlogs-grid">
-          {VLOGS.map((v) => <VlogCard key={v.id} vlog={v} />)}
-        </div>
+        <LatestVlogs />
       </section>
 
       {/* ── Top Rated Trains (Leaderboard) ───────── */}
@@ -216,66 +188,6 @@ export default function HomePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-/* ── VlogCard ───────────────────────────────────── */
-function VlogCard({ vlog }) {
-  const isFeatured = vlog.featured;
-  const ytId       = getYtId(vlog.videoUrl);
-  const thumb      = getYtThumb(vlog.videoUrl, isFeatured ? 'maxresdefault' : 'hqdefault');
-  const href       = vlog.videoUrl || '#';
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        gridColumn: isFeatured ? '1 / 3' : undefined,
-        position: 'relative',
-        borderRadius: '20px',
-        overflow: 'hidden',
-        background: 'var(--bg2)',
-        border: '1px solid var(--border)',
-        display: 'block',
-        aspectRatio: isFeatured ? '2 / 1' : '16 / 9',
-        textDecoration: 'none',
-        transition: 'transform 0.25s, border-color 0.25s',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = 'rgba(255,0,0,0.5)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--border)'; }}
-    >
-      {thumb && (
-        <img
-          src={thumb}
-          alt={vlog.title}
-          loading={isFeatured ? 'eager' : 'lazy'}
-          decoding="async"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.05) 55%)' }} />
-
-      {vlog.badge && (
-        <span style={{ position: 'absolute', top: '12px', left: '12px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'var(--accent)', color: '#fff', padding: '4px 11px', borderRadius: '100px' }}>
-          {vlog.badge}
-        </span>
-      )}
-
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: isFeatured ? '56px' : '40px', height: isFeatured ? '56px' : '40px', borderRadius: '50%', background: 'rgba(255,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(255,0,0,0.4)' }}>
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="white"><path d="M5 3l9 5-9 5V3z" /></svg>
-      </div>
-
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px' }}>
-        <div style={{ fontSize: isFeatured ? '18px' : '13px', fontWeight: 700, lineHeight: 1.3, marginBottom: '4px', color: '#fff' }}>{vlog.title}</div>
-        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {vlog.meta}
-          {ytId && <span style={{ color: '#f97070', fontWeight: 700 }}>▶ YouTube</span>}
-        </div>
-      </div>
-    </a>
   );
 }
 
