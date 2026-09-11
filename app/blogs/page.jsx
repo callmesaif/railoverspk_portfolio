@@ -22,6 +22,7 @@ export default function BlogPage() {
   const [posts,      setPosts]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
+  const [activeTag,  setActiveTag]  = useState('All');
 
   useEffect(() => {
     const q = query(

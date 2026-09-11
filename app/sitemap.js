@@ -1,5 +1,5 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { adminDb } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 const BASE_URL = 'https://therails.pk';
 
@@ -30,7 +30,7 @@ export default async function sitemap() {
   // Dynamic blog posts from Firestore
   let blogRoutes = [];
   try {
-    const q = query(collection(adminDb, 'posts'), where('published', '==', true));
+    const q = query(collection(db, 'posts'), where('published', '==', true));
     const snap = await getDocs(q);
     blogRoutes = snap.docs.map(doc => {
       const data = doc.data();
@@ -48,7 +48,7 @@ export default async function sitemap() {
   // Dynamic train reviews from Firestore
   let reviewRoutes = [];
   try {
-    const q = query(collection(adminDb, 'reviews'), where('published', '==', true));
+    const q = query(collection(db, 'reviews'), where('published', '==', true));
     const snap = await getDocs(q);
     reviewRoutes = snap.docs.map(doc => {
       const data = doc.data();
@@ -66,7 +66,7 @@ export default async function sitemap() {
   // Dynamic locomotives from Firestore
   let locoRoutes = [];
   try {
-    const q = query(collection(adminDb, 'locomotives'), where('published', '==', true));
+    const q = query(collection(db, 'locomotives'), where('published', '==', true));
     const snap = await getDocs(q);
     locoRoutes = snap.docs.map(doc => {
       const data = doc.data();
@@ -84,7 +84,7 @@ export default async function sitemap() {
   // Dynamic trains
 let trainRoutes = [];
 try {
-  const q = query(collection(adminDb, 'trains'), where('published', '==', true));
+  const q = query(collection(db, 'trains'), where('published', '==', true));
   const snap = await getDocs(q);
   trainRoutes = snap.docs.map(doc => ({
     url: `${BASE_URL}/trains/${doc.id}`,
