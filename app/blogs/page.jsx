@@ -22,7 +22,6 @@ export default function BlogPage() {
   const [posts,      setPosts]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
-  const [activeTag,  setActiveTag]  = useState('All');
 
   useEffect(() => {
     const q = query(
@@ -38,13 +37,6 @@ export default function BlogPage() {
     });
     return unsub;
   }, []);
-
-  // Collect all unique tags across posts
-  const allTags = useMemo(() => {
-    const tags = new Set();
-    posts.forEach(p => (p.tags || []).forEach(t => tags.add(t)));
-    return ['All', ...Array.from(tags)];
-  }, [posts]);
 
   const filtered = useMemo(() => {
     return posts.filter(p => {
@@ -88,26 +80,6 @@ export default function BlogPage() {
           {search && (
             <button onClick={() => setSearch('')} style={CLEAR_BTN}>✕</button>
           )}
-        </div>
-
-        {/* Tag filters */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1rem' }}>
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
-              style={{
-                fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-                padding: '7px 16px', borderRadius: '100px', cursor: 'pointer', border: 'none',
-                background: activeTag === tag ? 'var(--accent)' : 'var(--bg2)',
-                color: activeTag === tag ? '#fff' : 'var(--muted)',
-                outline: activeTag === tag ? 'none' : '1px solid var(--border2)',
-                transition: 'all 0.2s',
-              }}
-            >
-              {tag}
-            </button>
-          ))}
         </div>
       </div>
 
