@@ -7,6 +7,7 @@ const BASE_URL = 'https://therails.pk';
 const STATIC_PAGES = [
   { url: '/',          priority: '1.0', changefreq: 'weekly'  },
   { url: '/about',     priority: '0.8', changefreq: 'monthly' },
+  { url: '/trains',    priority: '0.9', changefreq: 'daily'   },
   { url: '/reviews',   priority: '0.9', changefreq: 'daily'   },
   { url: '/blogs',     priority: '0.9', changefreq: 'daily'   },
   { url: '/locomotives', priority: '0.7', changefreq: 'weekly' },

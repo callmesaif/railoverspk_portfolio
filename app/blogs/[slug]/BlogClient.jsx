@@ -3,6 +3,7 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
 import ShareButton from '@/components/ShareButton';
+import Comments from '@/components/Comments';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -193,6 +194,7 @@ export default function BlogClient({ params }) {
             )}
           </div>
         </div>
+        <Comments postId={post.id} />
       </article>
     </main>
   );
