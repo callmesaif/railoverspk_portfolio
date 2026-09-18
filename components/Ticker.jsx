@@ -1,15 +1,22 @@
-const ITEMS = [
-  '6M+ Total Views',
-  '80+ Train Reviews',
+// Single source of truth — update here, reflects everywhere (Ticker + Stats)
+export const SITE_STATS = [
+  { num: '6M+',  label: 'Total Views'    },
+  { num: '80+',  label: 'Train Reviews'  },
+  { num: '42K+', label: 'Subscribers'    },
+  { num: '7+',   label: 'Years On Track' },
+];
+
+const TICKER_ITEMS = [
+  `${SITE_STATS[0].num} ${SITE_STATS[0].label}`,
+  `${SITE_STATS[1].num} Train Reviews`,
   'Pakistan Railways · Documented',
   'Lahore · Karachi · Peshawar · Quetta',
   'Now Booking Collaborations',
-  '42K+ Subscribers',
+  `${SITE_STATS[2].num} Subscribers`,
 ];
 
 export default function Ticker() {
-  // Duplicate items so the loop is seamless
-  const all = [...ITEMS, ...ITEMS];
+  const all = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
   return (
     <div className="ticker">

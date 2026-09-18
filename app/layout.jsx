@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import WhatsAppChat from '@/components/WhatsAppChat';
 import CopyProtection from '@/components/CopyProtection';
+import PageTracker from '@/components/PageTracker';
 
 export const metadata = {
   title: 'RaiLoversPK | Pakistan Railway Vlogger & Filmmaker',
@@ -70,6 +71,7 @@ export default function RootLayout({ children }) {
           <SpeedInsights />
           <WhatsAppChat />
           <CopyProtection />
+          <PageTracker />
         </ThemeProvider>
       </body>
     </html>

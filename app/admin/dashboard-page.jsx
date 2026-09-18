@@ -5,6 +5,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAdmin } from '@/components/admin/AdminAuthProvider';
 import VercelStatus from '@/components/admin/VercelStatus';
+import AdminAnalytics from '@/components/admin/AdminAnalytics';
 
 export default function AdminDashboard() {
   const { user }            = useAdmin();
@@ -117,6 +118,11 @@ export default function AdminDashboard() {
           })}
           {reviews.length === 0 && <div style={EMPTY}>No reviews yet. <Link href="/admin/reviews/new" style={{ color: '#1E90FF' }}>Create one →</Link></div>}
         </div>
+      </div>
+
+      {/* Site Visitor Analytics */}
+      <div style={SECTION}>
+        <AdminAnalytics />
       </div>
 
       {/* Recent Polls */}
