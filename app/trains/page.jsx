@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const STATUS_CONFIG = {
@@ -22,6 +22,7 @@ export default function TrainsPage() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [dayFilter,  setDayFilter]  = useState('today');
   const [mounted,    setMounted]    = useState(false);
+  const [alerts,     setAlerts]     = useState([]);
 
   // Prevent SSR mismatch
   useEffect(() => { setMounted(true); }, []);
@@ -30,6 +31,16 @@ export default function TrainsPage() {
   const todayName = DAY_NAMES[new Date().getDay()];
 
   useEffect(() => {
+    // Load daily alerts
+    const aq    = query(collection(db, 'daily_reports'), orderBy('createdAt', 'desc'));
+    const unsub2 = onSnapshot(aq, snap => {
+      const today = new Date().toISOString().split('T')[0];
+      setAlerts(snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.active && (!r.validUntil || r.validUntil >= today))
+      );
+    });
+
     const q     = query(collection(db, 'trains'), where('published', '==', true));
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -40,7 +51,7 @@ export default function TrainsPage() {
       console.error('Trains fetch error:', err);
       setLoading(false);
     });
-    return unsub;
+    return () => { unsub(); unsub2(); };
   }, []);
 
   const types = useMemo(() => {
@@ -80,6 +91,61 @@ export default function TrainsPage() {
           Complete route, timings, and fare information for Pakistan Railways trains.
         </p>
       </div>
+
+
+      {/* Service Alerts Banner */}
+      {alerts.length > 0 && (
+        <div className="container" style={{ padding: '0 2.5rem 1.5rem' }}>
+          {alerts.map(alert => {
+            const COLOR = {
+              suspended: '#f97070', delayed: '#ffb432',
+              diverted: '#a78bfa', maintenance: '#1E90FF', restored: '#3fca7a',
+            }[alert.alertType] || '#ffb432';
+            const ICON = {
+              suspended: '🔴', delayed: '🟡', diverted: '🔀',
+              maintenance: '🔧', restored: '🟢',
+            }[alert.alertType] || '⚠️';
+            return (
+              <div key={alert.id} style={{
+                background: COLOR + '11',
+                border: `1px solid ${COLOR}44`,
+                borderLeft: `4px solid ${COLOR}`,
+                borderRadius: '14px',
+                padding: '14px 18px',
+                marginBottom: '10px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '16px', flexShrink: 0 }}>{ICON}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>
+                        {alert.affectedTrainNum ? `#${alert.affectedTrainNum} ` : ''}{alert.affectedTrainName}
+                      </span>
+                      <span style={{ fontSize: '9px', fontWeight: 900, padding: '2px 8px', borderRadius: '100px', background: COLOR + '22', color: COLOR, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        {alert.alertType}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: alert.alternativeTrains?.length ? '8px' : 0 }}>
+                      {alert.reason}{alert.details ? ` — ${alert.details}` : ''}
+                    </div>
+                    {alert.alternativeTrains?.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>ALTERNATIVES:</span>
+                        {alert.alternativeTrains.map(t => (
+                          <span key={t.id} style={{ fontSize: '11px', fontWeight: 700, color: '#3fca7a', background: 'rgba(63,202,122,0.1)', border: '1px solid rgba(63,202,122,0.25)', padding: '2px 10px', borderRadius: '100px' }}>
+                            🚆 {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', flexShrink: 0 }}>{alert.date}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="container" style={{ padding: '0 2.5rem 2rem' }}>

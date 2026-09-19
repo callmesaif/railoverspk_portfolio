@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/trains',       label: 'Trains',       icon: '🚆' }, // ← add karo
   { href: '/admin/locomotives',  label: 'Locomotives',  icon: '🚂' },
   { href: '/admin/comments',    label: 'Comments',     icon: '💬' },
+  { href: '/admin/reports',     label: 'Daily Reports', icon: '📢' },
 ];
 
 const SITE_LINKS = [
