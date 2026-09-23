@@ -274,9 +274,10 @@ img { max-width: 100%; height: auto; display: block; }
   .rl-form-grid { grid-template-columns: 1fr; }
   .rl-score-grid { grid-template-columns: 1fr 1fr; }
 
-  /* Admin */
+  /* Admin — hide desktop sidebar, show mobile bottom nav */
   .rl-admin-sidebar { display: none; }
-  .rl-admin-content { width: 100%; }
+  .rl-admin-content { width: 100%; padding-bottom: 80px; }
+  .rl-admin-mobile-nav { display: grid !important; }
 
   /* Buttons */
   .btn-primary, .btn-ghost { padding: 13px 20px; }
