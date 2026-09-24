@@ -42,7 +42,7 @@ export default function AdminSidebar() {
   return (
     <>
       {/* ── Desktop Sidebar ───────────────────────────── */}
-      <aside style={ASIDE}>
+      <aside className="rl-admin-sidebar" style={ASIDE}>
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <Image src="/railoverspk_logo.webp" alt="RaiLoversPK" width={44} height={44} style={{ objectFit: 'contain' }} />
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.1rem', letterSpacing: '0.08em', color: '#fff' }}>ADMIN</div>
@@ -189,7 +189,7 @@ export default function AdminSidebar() {
 }
 
 /* ── Styles ─────────────────────────────────────────── */
-const ASIDE       = { width: '220px', flexShrink: 0, background: '#0c0c12', borderRight: '1px solid rgba(255,255,255,0.07)', padding: '1.75rem 1.25rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'sticky', top: 0 };
+const ASIDE       = { width: '220px', flexShrink: 0, background: '#0c0c12', borderRight: '1px solid rgba(255,255,255,0.07)', padding: '1.75rem 1.25rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'sticky', top: 0, overflow: 'auto' };
 const SEC_LABEL   = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' };
 const SIGNOUT_BTN = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer' };
 const MOBILE_NAV  = { display: 'none', /* mobile: shown via .rl-admin-mobile-nav CSS */ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 997, background: '#0c0c12', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '8px 0 max(8px, env(safe-area-inset-bottom))', gridTemplateColumns: 'repeat(5, 1fr)' };
