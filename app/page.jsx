@@ -72,6 +72,57 @@ export default function HomePage() {
     <main style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <Nav />
 
+
+      {/* ── Service Alerts Banner (top) ──────────── */}
+      {alerts.length > 0 && (
+        <div style={{
+          background: '#0c0005',
+          borderBottom: '1px solid rgba(249,112,112,0.2)',
+        }}>
+          {alerts.map(alert => {
+            const COLOR = {
+              suspended: '#f97070', delayed: '#ffb432',
+              diverted: '#a78bfa', maintenance: '#1E90FF', restored: '#3fca7a',
+            }[alert.alertType] || '#ffb432';
+            const ICON = {
+              suspended: '🔴', delayed: '🟡', diverted: '🔀',
+              maintenance: '🔧', restored: '🟢',
+            }[alert.alertType] || '⚠️';
+            return (
+              <div key={alert.id} style={{
+                borderBottom: `1px solid ${COLOR}22`,
+                borderLeft: `4px solid ${COLOR}`,
+                background: COLOR + '0a',
+                padding: '12px 20px',
+              }}>
+                <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '0' }}>
+                  <span style={{ fontSize: '16px', flexShrink: 0 }}>{ICON}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: COLOR, flexShrink: 0 }}>
+                    {alert.alertType}
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                    {alert.affectedTrainNum ? `#${alert.affectedTrainNum} ` : ''}{alert.affectedTrainName}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', flex: 1 }}>
+                    {alert.reason}{alert.details ? ` — ${alert.details}` : ''}
+                  </span>
+                  {alert.alternativeTrains?.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>ALT:</span>
+                      {alert.alternativeTrains.map(t => (
+                        <span key={t.id} style={{ fontSize: '11px', fontWeight: 700, color: '#3fca7a', background: 'rgba(63,202,122,0.1)', border: '1px solid rgba(63,202,122,0.25)', padding: '2px 9px', borderRadius: '100px' }}>
+                          🚆 {t.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Hero ─────────────────────────────────── */}
       <section className="rl-hero">
         <div className="rl-hero-bg">
@@ -154,64 +205,6 @@ export default function HomePage() {
         </div>
         <LatestVlogs />
       </section>
-
-      {/* ── Service Alerts ───────────────────────── */}
-      {alerts.length > 0 && (
-        <section className="container" style={{ padding: '0 2.5rem 2rem' }}>
-          <div style={{ marginBottom: '1rem' }}>
-            <div className="sec-label">⚠️ Live Updates</div>
-            <h2 className="sec-title">Service Alerts</h2>
-          </div>
-          {alerts.map(alert => {
-            const COLOR = {
-              suspended: '#f97070', delayed: '#ffb432',
-              diverted: '#a78bfa', maintenance: '#1E90FF', restored: '#3fca7a',
-            }[alert.alertType] || '#ffb432';
-            const ICON = {
-              suspended: '🔴', delayed: '🟡', diverted: '🔀',
-              maintenance: '🔧', restored: '🟢',
-            }[alert.alertType] || '⚠️';
-            return (
-              <div key={alert.id} style={{
-                background: COLOR + '0d',
-                border: `1px solid ${COLOR}33`,
-                borderLeft: `4px solid ${COLOR}`,
-                borderRadius: '16px',
-                padding: '16px 20px',
-                marginBottom: '10px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '18px', flexShrink: 0 }}>{ICON}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                        {alert.affectedTrainNum ? `#${alert.affectedTrainNum} ` : ''}{alert.affectedTrainName}
-                      </span>
-                      <span style={{ fontSize: '9px', fontWeight: 900, padding: '2px 9px', borderRadius: '100px', background: COLOR + '22', color: COLOR, textTransform: 'uppercase', letterSpacing: '0.1em', border: `1px solid ${COLOR}44` }}>
-                        {alert.alertType}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: alert.alternativeTrains?.length ? '8px' : 0, lineHeight: 1.6 }}>
-                      {alert.reason}{alert.details ? ` — ${alert.details}` : ''}
-                    </div>
-                    {alert.alternativeTrains?.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Alternatives:</span>
-                        {alert.alternativeTrains.map(t => (
-                          <span key={t.id} style={{ fontSize: '11px', fontWeight: 700, color: '#3fca7a', background: 'rgba(63,202,122,0.1)', border: '1px solid rgba(63,202,122,0.25)', padding: '3px 10px', borderRadius: '100px' }}>
-                            🚆 {t.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '10px', color: 'var(--muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{alert.date}</span>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      )}
 
       {/* ── Top Rated Trains (Leaderboard) ───────── */}
       {topReviews.length > 0 && (
