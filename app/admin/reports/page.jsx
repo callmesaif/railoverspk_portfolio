@@ -19,6 +19,7 @@ const REASONS = [
   'Engine failure',
   'Flood / track damage',
   'Fog / weather conditions',
+  'Low occupancy',
   'Operational reasons',
   'Staff shortage',
   'Signal failure',
