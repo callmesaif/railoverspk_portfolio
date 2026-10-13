@@ -24,7 +24,7 @@ export default function LatestVlogs() {
 
         // Recent 30 videos fetch karo
         const videosRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30&key=${API_KEY}`
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${API_KEY}`
         );
         const videosData = await videosRes.json();
 
@@ -66,7 +66,7 @@ export default function LatestVlogs() {
             const durationInSec = getDurationInSeconds(v.duration);
             const isShortTag = /#shorts/i.test(v.title || '') || /#shorts/i.test(v.description || '');
             
-            return v.id && v.title && durationInSec > 1200 && !isShortTag;
+            return v.id && v.title && durationInSec > 180 && !isShortTag;
           })
           .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
           .slice(0, 4); // Sirf 4 most recent vlogs
