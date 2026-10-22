@@ -1,13 +1,17 @@
 'use client';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { doc, onSnapshot, collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const NAV_LINKS = [
-  { href: '/',         label: 'Home'     },
-  { href: '/about',    label: 'About'    },
-  { href: '/reviews',  label: 'Reviews'  },
-  { href: '/blogs',    label: 'Blog'     },
-  { href: '/contact',  label: 'Contact'  },
+  { href: '/',            label: 'Home'        },
+  { href: '/about',       label: 'About'       },
+  { href: '/reviews',     label: 'Reviews'     },
+  { href: '/blogs',       label: 'Blog'        },
+  { href: '/contact',     label: 'Contact'     },
   { href: '/locomotives', label: 'Locomotives' },
 ];
 
@@ -21,6 +25,93 @@ const SOCIALS = [
   { label: 'Twitter',   href: 'https://twitter.com/railoverspk', color: '#1da1f2',
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22.46 6.011c-.77.342-1.598.572-2.468.676a4.316 4.316 0 0 0 1.892-2.382 8.61 8.61 0 0 1-2.732 1.044 4.298 4.298 0 0 0-7.326 3.92 12.197 12.197 0 0 1-8.854-4.49 4.289 4.289 0 0 0 1.33 5.742 4.266 4.266 0 0 1-1.947-.538v.055a4.3 4.3 0 0 0 3.445 4.213 4.303 4.303 0 0 1-1.94.074 4.302 4.302 0 0 0 4.016 2.98A8.61 8.61 0 0 1 2 19.54a12.147 12.147 0 0 0 6.598 1.933c7.917 0 12.244-6.56 12.244-12.244 0-.187-.004-.373-.012-.558a8.74 8.74 0 0 0 2.143-2.227l.001-.001z"/></svg> },
 ];
+
+const PAGE_LABELS = {
+  '/':            'Home',
+  '/about':       'About',
+  '/trains':      'Trains',
+  '/reviews':     'Reviews',
+  '/blogs':       'Blog',
+  '/locomotives': 'Locomotives',
+  '/contact':     'Contact',
+};
+
+function formatViews(n) {
+  if (!n) return '0';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return n.toLocaleString();
+}
+
+function PageViewsBadge() {
+  const pathname              = usePathname();
+  const [pageViews, setPageViews]   = useState(null);
+  const [totalViews, setTotalViews] = useState(null);
+
+  // Current page views — live
+  useEffect(() => {
+    const docId = pathname === '/' ? 'home' : pathname.replace(/^\//, '').replace(/\//g, '_');
+    const ref   = doc(db, 'analytics', docId);
+    const unsub = onSnapshot(ref, snap => {
+      setPageViews(snap.exists() ? snap.data().views || 0 : 0);
+    }, () => setPageViews(0));
+    return unsub;
+  }, [pathname]);
+
+  // Total site visits — sum of all pages
+  useEffect(() => {
+    async function fetchTotal() {
+      try {
+        const snap  = await getDocs(collection(db, 'analytics'));
+        const total = snap.docs.reduce((s, d) => s + (d.data().views || 0), 0);
+        setTotalViews(total);
+      } catch { setTotalViews(0); }
+    }
+    fetchTotal();
+  }, []);
+
+  const pageLabel = Object.keys(PAGE_LABELS).find(k =>
+    k === '/' ? pathname === '/' : pathname.startsWith(k)
+  );
+  const label = PAGE_LABELS[pageLabel] || 'This Page';
+
+  return (
+    <div style={{
+      display: 'flex', gap: '12px', flexWrap: 'wrap',
+      padding: '14px 0',
+      borderTop: '1px solid var(--border)',
+      marginTop: '1rem',
+    }}>
+      {/* Current page views */}
+      <div style={BADGE}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--accent)', flexShrink: 0 }}>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span style={BADGE_LABEL}>{label} Page</span>
+        <span style={BADGE_NUM}>
+          {pageViews === null ? '—' : formatViews(pageViews)} views
+        </span>
+      </div>
+
+      {/* Total site visits */}
+      <div style={BADGE}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#3fca7a', flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span style={BADGE_LABEL}>Total Site</span>
+        <span style={{ ...BADGE_NUM, color: '#3fca7a' }}>
+          {totalViews === null ? '—' : formatViews(totalViews)} visits
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const BADGE       = { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '100px', padding: '5px 12px' };
+const BADGE_LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)' };
+const BADGE_NUM   = { fontSize: '11px', fontWeight: 900, color: 'var(--accent)' };
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -70,6 +161,9 @@ export default function Footer() {
             </div>
           </div>
         </div>
+
+        {/* Page Views Section */}
+        <PageViewsBadge />
 
         <div className="rl-footer-bottom">
           <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted2)' }}>© {year} RaiLoversPK. All rights reserved.</span>
