@@ -10,68 +10,11 @@ export default function LatestVlogs() {
   useEffect(() => {
     async function fetchVlogs() {
       try {
-        const API_KEY    = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-        const CHANNEL_ID = process.env.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID;
-
-        // Pehle channel ka uploads playlist ID lao
-        const channelRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${CHANNEL_ID}&key=${API_KEY}`
-        );
-        const channelData = await channelRes.json();
-        const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-
-        if (!uploadsPlaylistId) throw new Error('Playlist not found');
-
-        // Recent 30 videos fetch karo
-        const videosRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${API_KEY}`
-        );
-        const videosData = await videosRes.json();
-
-        // Video IDs nikalo stats aur duration ke liye
-        const videoIds = videosData.items
-          ?.map(item => item.snippet?.resourceId?.videoId)
-          .filter(Boolean)
-          .join(',');
-
-        if (!videoIds) {
-          setVlogs([]);
-          return;
-        }
-
-        // Duration aur stats fetch karo
-        const statsRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails,snippet&id=${videoIds}&key=${API_KEY}`
-        );
-        const statsData = await statsRes.json();
-
-        // Filter: Strictly Landscape Vlogs (> 20 mins & NO shorts)
-        const filteredAndSorted = videosData.items
-          ?.map(item => {
-            const videoId = item.snippet?.resourceId?.videoId;
-            const details = statsData.items?.find(s => s.id === videoId);
-            return {
-              id:          videoId,
-              title:       item.snippet?.title,
-              description: item.snippet?.description,
-              thumbnail:   item.snippet?.thumbnails?.maxres?.url ||
-                           item.snippet?.thumbnails?.high?.url ||
-                           item.snippet?.thumbnails?.medium?.url,
-              publishedAt: item.snippet?.publishedAt,
-              views:       details?.statistics?.viewCount,
-              duration:    details?.contentDetails?.duration,
-            };
-          })
-          .filter(v => {
-            const durationInSec = getDurationInSeconds(v.duration);
-            const isShortTag = /#shorts/i.test(v.title || '') || /#shorts/i.test(v.description || '');
-            
-            return v.id && v.title && durationInSec > 180 && !isShortTag;
-          })
-          .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-          .slice(0, 4); // Sirf 4 most recent vlogs
-
-        setVlogs(filteredAndSorted || []);
+        // Server-side API route — YouTube key is hidden & cached
+        const res  = await fetch('/api/youtube');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to fetch');
+        setVlogs(data.videos || []);
       } catch (err) {
         console.error('YouTube fetch error:', err);
         setError(true);
@@ -79,7 +22,6 @@ export default function LatestVlogs() {
         setLoading(false);
       }
     }
-
     fetchVlogs();
   }, []);
 
