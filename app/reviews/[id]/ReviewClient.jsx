@@ -136,6 +136,12 @@ function CommentsSection({ reviewId }) {
                 <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(c.createdAt)}</span>
               </div>
               <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'var(--muted)', margin: 0 }}>{c.text}</p>
+              {c.reply && (
+                <div style={{ marginTop: '10px', marginLeft: '12px', padding: '10px 14px', borderLeft: '3px solid var(--accent)', background: 'var(--accent-dim)', borderRadius: '0 12px 12px 0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '4px' }}>✓ RaiLoversPK replied</div>
+                  <p style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--text)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.reply}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

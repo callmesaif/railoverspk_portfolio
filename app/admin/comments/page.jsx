@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, updateDoc, deleteField, serverTimestamp, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 /* Comments live in a subcollection under each parent doc:
@@ -60,6 +60,9 @@ export default function AdminComments() {
   const [errors,   setErrors]   = useState([]);
   const [tab,      setTab]      = useState('all');
   const [deleting, setDeleting] = useState(null);
+  const [replyingTo,  setReplyingTo]  = useState(null);
+  const [replyDraft,  setReplyDraft]  = useState('');
+  const [savingReply, setSavingReply] = useState(false);
 
   const addError = msg => setErrors(prev => (prev.includes(msg) ? prev : [...prev, msg]));
 
@@ -70,6 +73,8 @@ export default function AdminComments() {
   const count   = gs => gs.reduce((s, g) => s + g.comments.length, 0);
   const nPosts  = count(posts.groups);
   const nReview = count(reviews.groups);
+  const awaiting = [...posts.groups, ...reviews.groups]
+    .reduce((s, g) => s + g.comments.filter(c => !c.reply).length, 0);
 
   const visible =
     tab === 'posts'   ? posts.groups :
@@ -88,6 +93,38 @@ export default function AdminComments() {
     }
   }
 
+  function startReply(c) { setReplyingTo(c.id); setReplyDraft(c.reply || ''); }
+  function cancelReply()  { setReplyingTo(null); setReplyDraft(''); }
+
+  async function saveReply(type, parentId, commentId) {
+    const text = replyDraft.trim();
+    if (!text) return;
+    setSavingReply(true);
+    try {
+      await updateDoc(doc(db, type, parentId, 'comments', commentId), {
+        reply:     text,
+        repliedAt: serverTimestamp(),
+      });
+      cancelReply();
+    } catch (e) {
+      alert('Reply save nahi hui: ' + (e.code || e.message));
+    } finally {
+      setSavingReply(false);
+    }
+  }
+
+  async function removeReply(type, parentId, commentId) {
+    if (!window.confirm('Is reply ko hata dena hai?')) return;
+    try {
+      await updateDoc(doc(db, type, parentId, 'comments', commentId), {
+        reply:     deleteField(),
+        repliedAt: deleteField(),
+      });
+    } catch (e) {
+      alert('Reply remove nahi hui: ' + (e.code || e.message));
+    }
+  }
+
   const TABS = [
     { key: 'all',     label: 'All',     n: nPosts + nReview },
     { key: 'posts',   label: 'Blog',    n: nPosts           },
@@ -100,7 +137,7 @@ export default function AdminComments() {
         <div style={EYEBROW}>Moderation</div>
         <h1 style={HEADING}>Comments</h1>
         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-          {nPosts + nReview} total comment{nPosts + nReview !== 1 ? 's' : ''} · live
+          {nPosts + nReview} total comment{nPosts + nReview !== 1 ? 's' : ''} · {awaiting} awaiting reply · live
         </div>
       </div>
 
@@ -154,6 +191,48 @@ export default function AdminComments() {
                   <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                     {commentText(c)}
                   </p>
+
+                  {replyingTo === c.id ? (
+                    <div style={{ marginTop: '10px' }}>
+                      <textarea
+                        value={replyDraft}
+                        onChange={e => setReplyDraft(e.target.value)}
+                        placeholder="Reply likho…"
+                        rows={3}
+                        maxLength={1000}
+                        autoFocus
+                        style={REPLY_INPUT}
+                      />
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => saveReply(group.source.type, group.id, c.id)}
+                          disabled={savingReply || !replyDraft.trim()}
+                          style={{ ...BTN_BLUE, ...(savingReply || !replyDraft.trim() ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+                        >
+                          {savingReply ? 'Saving…' : c.reply ? 'Update Reply' : 'Post Reply'}
+                        </button>
+                        <button onClick={cancelReply} style={BTN_GHOST}>Cancel</button>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', alignSelf: 'center', marginLeft: 'auto' }}>
+                          {replyDraft.length}/1000
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {c.reply && (
+                        <div style={REPLY_BOX}>
+                          <div style={REPLY_LABEL}>↳ Your reply</div>
+                          <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.reply}</p>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        <button onClick={() => startReply(c)} style={BTN_BLUE_SOFT}>{c.reply ? 'Edit reply' : '↩ Reply'}</button>
+                        {c.reply && (
+                          <button onClick={() => removeReply(group.source.type, group.id, c.id)} style={BTN_RED_SOFT}>Remove reply</button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
                 <button
                   onClick={() => handleDelete(group.source.type, group.id, c.id)}
@@ -186,4 +265,11 @@ const LIST       = { background: '#0c0c12', border: '1px solid rgba(255,255,255,
 const ROW        = { display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' };
 const DEL_BTN    = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(249,112,112,0.12)', color: '#f97070', border: '1px solid rgba(249,112,112,0.25)', padding: '6px 12px', borderRadius: '100px', cursor: 'pointer', flexShrink: 0 };
 const EMPTY      = { padding: '3rem', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' };
+const REPLY_INPUT = { width: '100%', boxSizing: 'border-box', background: '#131320', border: '1px solid rgba(30,144,255,0.35)', borderRadius: '12px', padding: '12px 14px', color: '#fff', fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.6, outline: 'none', resize: 'vertical' };
+const REPLY_BOX   = { marginTop: '10px', padding: '10px 14px', background: 'rgba(30,144,255,0.07)', borderLeft: '3px solid #1E90FF', borderRadius: '0 12px 12px 0' };
+const REPLY_LABEL = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1E90FF', marginBottom: '4px' };
+const BTN_BLUE      = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', background: '#1E90FF', border: 'none', borderRadius: '100px', padding: '8px 16px', cursor: 'pointer' };
+const BTN_GHOST     = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '100px', padding: '8px 16px', cursor: 'pointer' };
+const BTN_BLUE_SOFT = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1E90FF', background: 'rgba(30,144,255,0.1)', border: '1px solid rgba(30,144,255,0.25)', borderRadius: '100px', padding: '6px 14px', cursor: 'pointer' };
+const BTN_RED_SOFT  = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#f97070', background: 'transparent', border: '1px solid rgba(249,112,112,0.25)', borderRadius: '100px', padding: '6px 14px', cursor: 'pointer' };
 const ERROR_BOX  = { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '14px 18px', fontSize: '13px', color: '#f97070', marginBottom: '1.25rem' };
