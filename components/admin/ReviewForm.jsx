@@ -37,6 +37,8 @@ export default function ReviewForm({ existing, id }) {
   const [published,   setPublished]   = useState(existing?.published   ?? false);
   const [saving,      setSaving]      = useState(false);
   const [error,       setError]       = useState('');
+  const [uploading,   setUploading]   = useState(false);
+  const [uploadInfo,  setUploadInfo]  = useState('');
 
   // Fares
   function setFare(i, key, val) {
@@ -54,7 +56,50 @@ export default function ReviewForm({ existing, id }) {
   }
   function removeImage(i) { setImages(prev => prev.filter((_, idx) => idx !== i)); }
 
+  // Gallery: upload one or many local files to ImgBB
+  async function handleGalleryUpload(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!files.length) return;
+
+    if (!process.env.NEXT_PUBLIC_IMGBB_KEY) {
+      setError('ImgBB key missing — NEXT_PUBLIC_IMGBB_KEY set karo (.env.local / Vercel).');
+      return;
+    }
+
+    setError('');
+    setUploading(true);
+    const failed = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadInfo(`Uploading ${i + 1} of ${files.length}…`);
+
+      if (!file.type.startsWith('image/')) { failed.push(file.name); continue; }
+      if (file.size > 10 * 1024 * 1024)     { failed.push(file.name + ' (10MB se bari)'); continue; }
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res  = await fetch(
+          `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_KEY}`,
+          { method: 'POST', body: formData }
+        );
+        const data = await res.json();
+        if (data.success) setImages(prev => [...prev, data.data.url]);
+        else failed.push(file.name);
+      } catch {
+        failed.push(file.name);
+      }
+    }
+
+    setUploading(false);
+    setUploadInfo('');
+    if (failed.length) setError('Upload nahi hui: ' + failed.join(', '));
+  }
+
   async function handleSave(pub = null) {
+    if (uploading) { setError('Images abhi upload ho rahi hain — thora intezar karo.'); return; }
     if (!name.trim()) { setError('Train name is required.'); return; }
     setError(''); setSaving(true);
     try {
@@ -158,6 +203,18 @@ export default function ReviewForm({ existing, id }) {
                 </div>
               ))}
             </div>
+            <label style={{ ...UPLOAD_BTN, ...(uploading ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}>
+              {uploading ? uploadInfo : '↑ Upload Images (multiple select kar sakte ho)'}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={uploading}
+                onChange={handleGalleryUpload}
+                style={{ display: 'none' }}
+              />
+            </label>
+            <div style={OR_DIV}>or paste URL</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
@@ -170,7 +227,7 @@ export default function ReviewForm({ existing, id }) {
               <button type="button" onClick={addImage} style={ADD_BTN}>Add</button>
             </div>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '6px' }}>
-              Upload to ImgBB → paste URL here. Press Enter or click Add.
+              Local images upload karo, ya URL paste karke Enter / Add dabao.
             </div>
           </Field>
 
@@ -229,5 +286,7 @@ const BTN_DRAFT    = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em
 const BTN_PUBLISH  = { fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: '#1E90FF', border: 'none', borderRadius: '100px', padding: '11px 24px', cursor: 'pointer' };
 const REMOVE_IMG   = { position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.7)', border: 'none', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontSize: '12px' };
 const REMOVE_IMG_INLINE = { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', color: '#f97070', padding: '6px 10px', cursor: 'pointer', fontSize: '12px', flexShrink: 0 };
+const UPLOAD_BTN   = { display: 'block', textAlign: 'center', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#1E90FF', background: 'rgba(30,144,255,0.08)', border: '1px dashed rgba(30,144,255,0.3)', borderRadius: '12px', padding: '14px', cursor: 'pointer', marginBottom: '10px' };
+const OR_DIV        = { fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: '8px 0', letterSpacing: '0.1em', textTransform: 'uppercase' };
 const ADD_BTN      = { fontSize: '11px', fontWeight: 700, background: 'rgba(30,144,255,0.15)', border: '1px solid rgba(30,144,255,0.3)', color: '#1E90FF', borderRadius: '10px', padding: '0 16px', cursor: 'pointer', flexShrink: 0, height: '46px' };
 const ADD_BTN_FULL = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#1E90FF', background: 'rgba(30,144,255,0.08)', border: '1px dashed rgba(30,144,255,0.3)', borderRadius: '10px', padding: '11px', cursor: 'pointer', width: '100%' };

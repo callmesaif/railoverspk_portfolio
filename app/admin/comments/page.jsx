@@ -1,108 +1,167 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  collection, onSnapshot, orderBy,
-  query, getDocs, deleteDoc, doc,
-} from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export default function AdminComments() {
-  const [groups,   setGroups]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [deleting, setDeleting] = useState(null);
+/* Comments live in a subcollection under each parent doc:
+     posts/{id}/comments    → field "message"
+     reviews/{id}/comments  → field "text"                       */
+const SOURCES = [
+  { type: 'posts',   label: 'Blog',    titleKey: 'title', href: id => `/blogs/${id}`,   color: '#1E90FF' },
+  { type: 'reviews', label: 'Reviews', titleKey: 'name',  href: id => `/reviews/${id}`, color: '#ffb432' },
+];
+
+const commentText = c => c.message ?? c.text ?? '';
+const commentTime = c => (c.createdAt?.toMillis ? c.createdAt.toMillis() : Date.now());
+
+/* Live listener: all parents of one type + each parent's comments */
+function useCommentGroups(source, onError) {
+  const { type, titleKey } = source;
+  const [parents,  setParents]  = useState(null);
+  const [byParent, setByParent] = useState({});
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'posts'), async snap => {
-      const posts = snap.docs.map(d => ({ id: d.id, title: d.data().title || d.id }));
-      const results = await Promise.all(
-        posts.map(async post => {
-          const q     = query(collection(db, 'posts', post.id, 'comments'), orderBy('createdAt', 'desc'));
-          const cSnap = await getDocs(q);
-          const comments = cSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          return { ...post, comments };
-        })
-      );
-      setGroups(results.filter(g => g.comments.length > 0));
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
+    return onSnapshot(
+      collection(db, type),
+      snap => setParents(snap.docs.map(d => ({ id: d.id, title: d.data()[titleKey] || d.id }))),
+      err  => { onError(`${type}: ${err.code || err.message}`); setParents([]); }
+    );
+  }, [type, titleKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleDelete(postId, commentId) {
+  const idsKey = parents ? parents.map(p => p.id).join('|') : null;
+
+  useEffect(() => {
+    if (!parents) return;
+    const unsubs = parents.map(p =>
+      onSnapshot(
+        collection(db, type, p.id, 'comments'),
+        snap => setByParent(prev => ({ ...prev, [p.id]: snap.docs.map(d => ({ id: d.id, ...d.data() })) })),
+        err  => { onError(`${type}/${p.id}/comments: ${err.code || err.message}`); setByParent(prev => ({ ...prev, [p.id]: [] })); }
+      )
+    );
+    return () => unsubs.forEach(u => u());
+  }, [type, idsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loading = parents === null || parents.some(p => !(p.id in byParent));
+
+  const groups = (parents || [])
+    .map(p => ({
+      ...p,
+      source,
+      comments: [...(byParent[p.id] || [])].sort((a, b) => commentTime(b) - commentTime(a)),
+    }))
+    .filter(g => g.comments.length > 0);
+
+  return { groups, loading };
+}
+
+export default function AdminComments() {
+  const [errors,   setErrors]   = useState([]);
+  const [tab,      setTab]      = useState('all');
+  const [deleting, setDeleting] = useState(null);
+
+  const addError = msg => setErrors(prev => (prev.includes(msg) ? prev : [...prev, msg]));
+
+  const posts   = useCommentGroups(SOURCES[0], addError);
+  const reviews = useCommentGroups(SOURCES[1], addError);
+
+  const loading = posts.loading || reviews.loading;
+  const count   = gs => gs.reduce((s, g) => s + g.comments.length, 0);
+  const nPosts  = count(posts.groups);
+  const nReview = count(reviews.groups);
+
+  const visible =
+    tab === 'posts'   ? posts.groups :
+    tab === 'reviews' ? reviews.groups :
+    [...posts.groups, ...reviews.groups];
+
+  async function handleDelete(type, parentId, commentId) {
+    if (!window.confirm('Is comment ko delete karna hai? Yeh wapas nahi aayega.')) return;
     setDeleting(commentId);
     try {
-      await deleteDoc(doc(db, 'posts', postId, 'comments', commentId));
-      setGroups(prev => prev.map(g =>
-        g.id === postId
-          ? { ...g, comments: g.comments.filter(c => c.id !== commentId) }
-          : g
-      ).filter(g => g.comments.length > 0));
-    } catch (err) {
-      console.error('Delete failed:', err);
+      await deleteDoc(doc(db, type, parentId, 'comments', commentId));
+    } catch (e) {
+      alert('Delete failed: ' + (e.code || e.message));
     } finally {
       setDeleting(null);
     }
   }
 
-  const totalComments = groups.reduce((s, g) => s + g.comments.length, 0);
+  const TABS = [
+    { key: 'all',     label: 'All',     n: nPosts + nReview },
+    { key: 'posts',   label: 'Blog',    n: nPosts           },
+    { key: 'reviews', label: 'Reviews', n: nReview          },
+  ];
 
   return (
     <main style={PAGE}>
       <div style={HEADER}>
-        <div>
-          <div style={EYEBROW}>Moderation</div>
-          <h1 style={HEADING}>Comments</h1>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-            {totalComments} total comment{totalComments !== 1 ? 's' : ''}
-          </div>
+        <div style={EYEBROW}>Moderation</div>
+        <h1 style={HEADING}>Comments</h1>
+        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+          {nPosts + nReview} total comment{nPosts + nReview !== 1 ? 's' : ''} · live
         </div>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={tab === t.key ? TAB_ACTIVE : TAB}>
+            {t.label} <span style={{ opacity: 0.7 }}>({t.n})</span>
+          </button>
+        ))}
+      </div>
+
+      {errors.length > 0 && (
+        <div style={ERROR_BOX}>
+          <strong>Kuch comments load nahi ho sake</strong> (Firestore rules check karo):
+          {errors.map(e => <div key={e} style={{ fontSize: '11px', opacity: 0.8, marginTop: '4px' }}>{e}</div>)}
+        </div>
+      )}
+
       {loading && <div style={EMPTY}>Loading comments…</div>}
 
-      {!loading && groups.length === 0 && (
+      {!loading && visible.length === 0 && errors.length === 0 && (
         <div style={EMPTY}>Abhi koi comments nahi hain.</div>
       )}
 
-      {!loading && groups.map(group => (
-        <div key={group.id} style={SECTION}>
+      {!loading && visible.map(group => (
+        <div key={group.source.type + group.id} style={SECTION}>
           <div style={SEC_HEADER}>
-            <div style={SEC_TITLE}>{group.title}</div>
-            <Link href={`/blogs/${group.id}`} target="_blank" style={VIEW_LINK}>
-              View Post ↗
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flexWrap: 'wrap' }}>
+              <span style={{ ...TYPE_BADGE, color: group.source.color, borderColor: group.source.color + '55', background: group.source.color + '15' }}>
+                {group.source.label}
+              </span>
+              <div style={SEC_TITLE}>{group.title}</div>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>{group.comments.length}</span>
+            </div>
+            <Link href={group.source.href(group.id)} target="_blank" style={VIEW_LINK}>View ↗</Link>
           </div>
 
-          <div style={TABLE}>
-            <div style={TABLE_HEAD}>
-              <span>Name</span>
-              <span>Message</span>
-              <span style={{ textAlign: 'right' }}>Date</span>
-              <span style={{ textAlign: 'right' }}>Action</span>
-            </div>
+          <div style={LIST}>
             {group.comments.map(c => (
-              <div key={c.id} style={TABLE_ROW}>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#fff' }}>
-                  {c.name || 'Anonymous'}
-                </span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {c.message}
-                </span>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  {c.createdAt?.toDate
-                    ? c.createdAt.toDate().toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : '—'}
-                </span>
-                <span style={{ textAlign: 'right' }}>
-                  <button
-                    onClick={() => handleDelete(group.id, c.id)}
-                    disabled={deleting === c.id}
-                    style={deleting === c.id ? { ...DEL_BTN, opacity: 0.5 } : DEL_BTN}
-                  >
-                    {deleting === c.id ? '…' : 'Delete'}
-                  </button>
-                </span>
+              <div key={c.id} style={ROW}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#fff' }}>{c.name || 'Anonymous'}</span>
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+                      {c.createdAt?.toDate
+                        ? c.createdAt.toDate().toLocaleString('en-PK', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : 'just now'}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                    {commentText(c)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDelete(group.source.type, group.id, c.id)}
+                  disabled={deleting === c.id}
+                  style={deleting === c.id ? { ...DEL_BTN, opacity: 0.5 } : DEL_BTN}
+                >
+                  {deleting === c.id ? '…' : 'Delete'}
+                </button>
               </div>
             ))}
           </div>
@@ -112,16 +171,19 @@ export default function AdminComments() {
   );
 }
 
-const PAGE      = { padding: '2.5rem', fontFamily: "'Inter', sans-serif", color: '#fff', maxWidth: '1000px' };
-const HEADER    = { marginBottom: '2.5rem' };
-const EYEBROW   = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#1E90FF', marginBottom: '6px' };
-const HEADING   = { fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.8rem', textTransform: 'uppercase', lineHeight: 1, marginBottom: '4px' };
-const SECTION   = { marginBottom: '2rem' };
-const SEC_HEADER= { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' };
-const SEC_TITLE = { fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff' };
-const VIEW_LINK = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#1E90FF', textDecoration: 'none' };
-const TABLE     = { background: '#0c0c12', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden' };
-const TABLE_HEAD= { display: 'grid', gridTemplateColumns: '140px 1fr 120px 80px', gap: '1rem', padding: '12px 20px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)' };
-const TABLE_ROW = { display: 'grid', gridTemplateColumns: '140px 1fr 120px 80px', gap: '1rem', padding: '14px 20px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)' };
-const DEL_BTN   = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(249,112,112,0.12)', color: '#f97070', border: '1px solid rgba(249,112,112,0.25)', padding: '5px 12px', borderRadius: '100px', cursor: 'pointer' };
-const EMPTY     = { padding: '3rem', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' };
+const PAGE       = { padding: '2.5rem 1.25rem', fontFamily: "'Inter', sans-serif", color: '#fff', maxWidth: '1000px' };
+const HEADER     = { marginBottom: '1.75rem' };
+const EYEBROW    = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#1E90FF', marginBottom: '6px' };
+const HEADING    = { fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.8rem', textTransform: 'uppercase', lineHeight: 1, marginBottom: '4px' };
+const TAB        = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 16px', borderRadius: '100px', cursor: 'pointer', background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' };
+const TAB_ACTIVE = { ...TAB, background: 'rgba(30,144,255,0.15)', color: '#fff', border: '1px solid rgba(30,144,255,0.35)' };
+const SECTION    = { marginBottom: '1.75rem' };
+const SEC_HEADER = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' };
+const SEC_TITLE  = { fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff' };
+const TYPE_BADGE = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '3px 9px', borderRadius: '100px', border: '1px solid' };
+const VIEW_LINK  = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#1E90FF', textDecoration: 'none', flexShrink: 0 };
+const LIST       = { background: '#0c0c12', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden' };
+const ROW        = { display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' };
+const DEL_BTN    = { fontSize: '9px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', background: 'rgba(249,112,112,0.12)', color: '#f97070', border: '1px solid rgba(249,112,112,0.25)', padding: '6px 12px', borderRadius: '100px', cursor: 'pointer', flexShrink: 0 };
+const EMPTY      = { padding: '3rem', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' };
+const ERROR_BOX  = { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '14px 18px', fontSize: '13px', color: '#f97070', marginBottom: '1.25rem' };
