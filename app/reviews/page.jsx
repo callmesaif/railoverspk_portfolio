@@ -6,12 +6,14 @@ import Nav from '@/components/Nav';
 import TrainLeaderboard from '@/components/TrainLeaderboard';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useAllPublicRatings } from '@/lib/usePublicRatings';
+import { RATING_CATS, effectiveRating, summaryFor } from '@/lib/ratingMath';
 
 function StarRow({ score, max = 5 }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
       {[...Array(max)].map((_, i) => (
-        <span key={i} style={{ fontSize: '12px', color: i < score ? 'var(--accent)' : 'var(--border2)' }}>★</span>
+        <span key={i} style={{ fontSize: '12px', color: i < Math.round(score) ? 'var(--accent)' : 'var(--border2)' }}>★</span>
       ))}
     </div>
   );
@@ -23,6 +25,7 @@ export default function ReviewsPage() {
   const [search,  setSearch]  = useState('');
   const [activeRoute, setActiveRoute] = useState('All');
   const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const pubRatings = useAllPublicRatings();
 
   useEffect(() => {
     const q = query(collection(db, 'reviews'), where('published', '==', true));
@@ -62,9 +65,8 @@ export default function ReviewsPage() {
   }), [reviews, search, activeRoute]);
 
   const overallScore = r => {
-    const s = r.scores || {};
-    const vals = [s.punctuality, s.cleanliness, s.comfort, s.food].filter(v => v > 0);
-    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+    const o = effectiveRating(r, summaryFor(pubRatings, r.id)).overall;
+    return o ? o.value.toFixed(1) : null;
   };
 
   return (
@@ -73,7 +75,7 @@ export default function ReviewsPage() {
 
       {/* Header */}
       <div className="container" style={{ padding: '4rem 2.5rem 2rem' }}>
-        <div className="eyebrow"><span className="eyebrow-line" />Official Expert Ratings</div>
+        <div className="eyebrow"><span className="eyebrow-line" />Passenger Ratings</div>
         <h1 className="font-display" style={{ fontSize: 'clamp(3rem,10vw,7rem)', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: '1rem' }}>
           TRAIN <span style={{ color: 'var(--accent)' }}>SCORECARDS</span>
         </h1>
@@ -146,6 +148,7 @@ export default function ReviewsPage() {
         {!loading && filtered.length > 0 && (
           <div className="rl-reviews-grid">
             {filtered.map(r => {
+              const eff = effectiveRating(r, summaryFor(pubRatings, r.id));
               const avg = overallScore(r);
               return (
                 <Link key={r.id} href={`/reviews/${r.id}`} style={CARD}
@@ -161,7 +164,7 @@ export default function ReviewsPage() {
 
                     {avg && (
                       <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(5,5,8,0.85)', backdropFilter: 'blur(8px)', border: '1px solid var(--accent-border)', borderRadius: '12px', padding: '6px 10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '8px', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '2px' }}>Score</div>
+                        <div style={{ fontSize: '8px', fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '2px' }}>{eff.overall?.source === 'public' ? 'Passengers' : 'Creator'}</div>
                         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.6rem', color: 'var(--accent)', lineHeight: 1 }}>{avg}</div>
                       </div>
                     )}
@@ -179,12 +182,7 @@ export default function ReviewsPage() {
                     </div>
 
                     <div style={{ background: 'var(--bg3)', borderRadius: '12px', padding: '12px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {[
-                        { label: '⏱ Punctuality', val: r.scores?.punctuality },
-                        { label: '🧹 Cleanliness', val: r.scores?.cleanliness },
-                        { label: '💺 Comfort',     val: r.scores?.comfort     },
-                        { label: '🍱 Food',        val: r.scores?.food        },
-                      ].map(({ label, val }) => (
+                      {RATING_CATS.map(cat => ({ label: cat.label, val: eff.cats[cat.key].value })).map(({ label, val }) => (
                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
                           <StarRow score={val || 0} />

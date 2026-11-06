@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { collection, onSnapshot, deleteDoc, updateDoc, deleteField, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, deleteField, serverTimestamp, doc, getDoc, increment, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 /* Comments live in a subcollection under each parent doc:
@@ -74,18 +74,38 @@ export default function AdminComments() {
   const nPosts  = count(posts.groups);
   const nReview = count(reviews.groups);
   const awaiting = [...posts.groups, ...reviews.groups]
-    .reduce((s, g) => s + g.comments.filter(c => !c.reply).length, 0);
+    .reduce((s, g) => s + g.comments.filter(c => !c.reply && commentText(c)).length, 0);
 
   const visible =
     tab === 'posts'   ? posts.groups :
     tab === 'reviews' ? reviews.groups :
     [...posts.groups, ...reviews.groups];
 
-  async function handleDelete(type, parentId, commentId) {
+  async function handleDelete(type, parentId, c) {
     if (!window.confirm('Is comment ko delete karna hai? Yeh wapas nahi aayega.')) return;
-    setDeleting(commentId);
+    setDeleting(c.id);
     try {
-      await deleteDoc(doc(db, type, parentId, 'comments', commentId));
+      const batch = writeBatch(db);
+      batch.delete(doc(db, type, parentId, 'comments', c.id));
+
+      // A review comment may carry passenger ratings — take them back out of the totals
+      if (type === 'reviews' && c.ratings) {
+        const aggRef  = doc(db, 'review_ratings', parentId);
+        const aggSnap = await getDoc(aggRef);
+        if (aggSnap.exists()) {
+          const agg = aggSnap.data();
+          const dec = {};
+          ['punctuality', 'cleanliness', 'comfort', 'food'].forEach(k => {
+            const v = c.ratings[k];
+            if (Number.isInteger(v) && (agg['n_' + k] || 0) >= 1 && (agg['s_' + k] || 0) >= v) {
+              dec['n_' + k] = increment(-1);
+              dec['s_' + k] = increment(-v);
+            }
+          });
+          if (Object.keys(dec).length) batch.update(aggRef, { ...dec, updatedAt: serverTimestamp() });
+        }
+      }
+      await batch.commit();
     } catch (e) {
       alert('Delete failed: ' + (e.code || e.message));
     } finally {
@@ -188,8 +208,14 @@ export default function AdminComments() {
                         : 'just now'}
                     </span>
                   </div>
+                  {c.ratings && Object.values(c.ratings).some(n => n > 0) && (
+                    <div style={RATE_CHIP}>
+                      ★ {(Object.values(c.ratings).filter(n => n > 0).reduce((a, b) => a + b, 0) / Object.values(c.ratings).filter(n => n > 0).length).toFixed(1)}
+                      <span style={{ opacity: 0.7 }}> · {Object.entries(c.ratings).map(([k, n]) => `${k.slice(0, 5)} ${n}`).join(' · ')}</span>
+                    </div>
+                  )}
                   <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-                    {commentText(c)}
+                    {commentText(c) || '— rating only —'}
                   </p>
 
                   {replyingTo === c.id ? (
@@ -235,7 +261,7 @@ export default function AdminComments() {
                   )}
                 </div>
                 <button
-                  onClick={() => handleDelete(group.source.type, group.id, c.id)}
+                  onClick={() => handleDelete(group.source.type, group.id, c)}
                   disabled={deleting === c.id}
                   style={deleting === c.id ? { ...DEL_BTN, opacity: 0.5 } : DEL_BTN}
                 >
@@ -272,4 +298,5 @@ const BTN_BLUE      = { fontSize: '10px', fontWeight: 900, letterSpacing: '0.12e
 const BTN_GHOST     = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '100px', padding: '8px 16px', cursor: 'pointer' };
 const BTN_BLUE_SOFT = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1E90FF', background: 'rgba(30,144,255,0.1)', border: '1px solid rgba(30,144,255,0.25)', borderRadius: '100px', padding: '6px 14px', cursor: 'pointer' };
 const BTN_RED_SOFT  = { fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#f97070', background: 'transparent', border: '1px solid rgba(249,112,112,0.25)', borderRadius: '100px', padding: '6px 14px', cursor: 'pointer' };
+const RATE_CHIP   = { display: 'inline-block', fontSize: '11px', fontWeight: 800, color: '#7cc4ff', background: 'rgba(30,144,255,0.12)', border: '1px solid rgba(30,144,255,0.28)', borderRadius: '100px', padding: '3px 10px', marginBottom: '6px' };
 const ERROR_BOX  = { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '14px 18px', fontSize: '13px', color: '#f97070', marginBottom: '1.25rem' };

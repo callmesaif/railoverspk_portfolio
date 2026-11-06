@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
+import { useAllPublicRatings } from '@/lib/usePublicRatings';
+import { effectiveRating, summaryFor } from '@/lib/ratingMath';
 
 const CATEGORIES = [
   { key: 'overall',     label: 'Overall',     icon: '🏆' },
@@ -10,27 +12,29 @@ const CATEGORIES = [
   { key: 'food',        label: 'Food',        icon: '🍱' },
 ];
 
-function getScore(review, category) {
-  const s = review.scores || {};
+/* Passenger average first; creator's scorecard only where nobody has rated yet */
+function getScore(review, category, pub) {
+  const eff = effectiveRating(review, summaryFor(pub, review.id));
   if (category === 'overall') {
-    const vals = [s.punctuality, s.cleanliness, s.comfort, s.food].filter(v => v > 0);
-    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    return { value: eff.overall?.value || 0, n: eff.overall?.source === 'public' ? eff.overall.count : 0 };
   }
-  return s[category] || 0;
+  const cat = eff.cats[category];
+  return { value: cat?.value || 0, n: cat?.source === 'public' ? cat.n : 0 };
 }
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function TrainLeaderboard({ reviews = [], limit = 10, compact = false }) {
   const [activeCat, setActiveCat] = useState('overall');
+  const pub = useAllPublicRatings();
 
   const ranked = useMemo(() => {
     return [...reviews]
-      .map(r => ({ ...r, _score: getScore(r, activeCat) }))
+      .map(r => { const s = getScore(r, activeCat, pub); return { ...r, _score: s.value, _n: s.n }; })
       .filter(r => r._score > 0)
       .sort((a, b) => b._score - a._score)
       .slice(0, limit);
-  }, [reviews, activeCat, limit]);
+  }, [reviews, activeCat, limit, pub]);
 
   if (ranked.length === 0) return null;
 
@@ -97,6 +101,9 @@ export default function TrainLeaderboard({ reviews = [], limit = 10, compact = f
               }}>
                 {r._score.toFixed(1)}<span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>/5</span>
               </div>
+              {r._n > 0 && (
+                <div style={{ fontSize: '10px', color: 'var(--muted)', fontWeight: 600 }}>👥 {r._n} rating{r._n === 1 ? '' : 's'}</div>
+              )}
             </Link>
           ))}
         </div>
@@ -128,8 +135,9 @@ export default function TrainLeaderboard({ reviews = [], limit = 10, compact = f
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)' }}>{r.route}</div>
               </div>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.3rem', color: 'var(--accent)', flexShrink: 0 }}>
-                {r._score.toFixed(1)}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexShrink: 0 }}>
+                {r._n > 0 && <span style={{ fontSize: '10px', color: 'var(--muted)' }}>👥 {r._n}</span>}
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.3rem', color: 'var(--accent)' }}>{r._score.toFixed(1)}</span>
               </div>
             </Link>
           );

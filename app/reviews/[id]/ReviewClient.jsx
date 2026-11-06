@@ -6,8 +6,10 @@ import { db } from '@/lib/firebase';
 import {
   doc, getDoc, setDoc, updateDoc, increment,
   collection, addDoc, onSnapshot,
-  query, orderBy, serverTimestamp,
+  query, orderBy, serverTimestamp, writeBatch,
 } from 'firebase/firestore';
+import { usePublicRating, buildRatingWrite } from '@/lib/usePublicRatings';
+import { RATING_CATS, effectiveRating, cleanRatings } from '@/lib/ratingMath';
 
 function getYtId(url) {
   if (!url) return null;
@@ -17,19 +19,24 @@ function getYtId(url) {
   return l ? l[1] : null;
 }
 
-function ScoreBar({ label, score, max = 5 }) {
+function ScoreBar({ label, value = 0, n = 0, source = null, max = 5 }) {
+  const has = value > 0;
   return (
     <div style={{ marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
         <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--accent)' }}>{score}/5</span>
+        <span style={{ fontSize: '13px', fontWeight: 900, color: has ? 'var(--accent)' : 'var(--muted)' }}>
+          {has ? `${value.toFixed(1)}/5` : '—'}
+          {source === 'public' && <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', marginLeft: '6px' }}>({n})</span>}
+          {source === 'creator' && <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginLeft: '6px' }}>creator</span>}
+        </span>
       </div>
       <div style={{ height: '6px', background: 'var(--bg3)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ width: `${(score / max) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
+        <div style={{ width: `${(value / max) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
       </div>
       <div style={{ display: 'flex', gap: '3px', marginTop: '6px' }}>
         {[...Array(max)].map((_, i) => (
-          <span key={i} style={{ fontSize: '14px', color: i < score ? 'var(--accent)' : 'var(--border2)' }}>★</span>
+          <span key={i} style={{ fontSize: '14px', color: i < Math.round(value) ? 'var(--accent)' : 'var(--border2)' }}>★</span>
         ))}
       </div>
     </div>
@@ -75,34 +82,109 @@ function Lightbox({ images, startIdx, onClose }) {
   );
 }
 
-/* Comments — lazy loaded only when user scrolls to it */
+/* One tappable 1–5 star row (tap the same star again to clear) */
+function StarPicker({ value, onChange, label }) {
+  return (
+    <div role="radiogroup" aria-label={label} style={{ display: 'flex' }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={value === n}
+          aria-label={`${n} star${n > 1 ? 's' : ''}`}
+          onClick={() => onChange(value === n ? 0 : n)}
+          style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', fontSize: '28px', lineHeight: 1, color: n <= value ? 'var(--accent)' : 'var(--border2)', transition: 'color 0.12s' }}
+        >★</button>
+      ))}
+    </div>
+  );
+}
+
+/* Ratings a passenger attached to their feedback */
+function RatingChips({ ratings }) {
+  const items = RATING_CATS.filter(x => ratings?.[x.key] > 0);
+  if (!items.length) return null;
+  const avg   = items.reduce((s, x) => s + ratings[x.key], 0) / items.length;
+  const round = Math.round(avg);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '13px', letterSpacing: '1px', color: 'var(--accent)' }}>
+          {'★'.repeat(round)}<span style={{ color: 'var(--border2)' }}>{'★'.repeat(5 - round)}</span>
+        </span>
+        <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--accent)' }}>{avg.toFixed(1)}</span>
+      </span>
+      <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
+        {items.map(x => `${x.icon} ${ratings[x.key]}`).join('  ·  ')}
+      </span>
+    </div>
+  );
+}
+
+const NO_RATINGS = { punctuality: 0, cleanliness: 0, comfort: 0, food: 0 };
+
+/* Passenger feedback = optional star ratings + optional comment — lazy loaded on scroll */
 function CommentsSection({ reviewId }) {
   const [comments, setComments] = useState([]);
   const [name, setName]         = useState('');
   const [text, setText]         = useState('');
+  const [ratings, setRatings]   = useState(NO_RATINGS);
+  const [alreadyRated, setAlreadyRated] = useState(false);
   const [posting, setPosting]   = useState(false);
   const [posted, setPosted]     = useState(false);
+  const [error, setError]       = useState('');
+
+  const RATED_KEY = `rl_rated_${reviewId}`;
+
+  useEffect(() => {
+    try { setAlreadyRated(!!localStorage.getItem(RATED_KEY)); } catch {}
+  }, [RATED_KEY]);
 
   useEffect(() => {
     const q = query(collection(db, 'reviews', reviewId, 'comments'), orderBy('createdAt', 'asc'));
     return onSnapshot(q, snap => setComments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, [reviewId]);
 
+  const given     = cleanRatings(ratings);
+  const hasRating = Object.keys(given).length > 0;
+  const canPost   = !posting && (text.trim().length > 0 || (hasRating && !alreadyRated));
+
   async function handlePost(e) {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!canPost) return;
     setPosting(true);
+    setError('');
     try {
-      await addDoc(collection(db, 'reviews', reviewId, 'comments'), {
+      const sendRatings = hasRating && !alreadyRated;
+      const commentRef  = doc(collection(db, 'reviews', reviewId, 'comments'));
+
+      // Comment and rating totals are written together, so they can never disagree
+      const batch = writeBatch(db);
+      batch.set(commentRef, {
         name: name.trim() || 'Anonymous',
         text: text.trim(),
         createdAt: serverTimestamp(),
+        ...(sendRatings ? { ratings: given } : {}),
       });
-      setName(''); setText('');
+      if (sendRatings) {
+        batch.set(doc(db, 'review_ratings', reviewId), buildRatingWrite(given), { merge: true });
+      }
+      await batch.commit();
+
+      if (sendRatings) {
+        try { localStorage.setItem(RATED_KEY, '1'); } catch {}
+        setAlreadyRated(true);
+      }
+      setName(''); setText(''); setRatings(NO_RATINGS);
       setPosted(true);
       setTimeout(() => setPosted(false), 3000);
-    } catch (err) { console.error(err); }
-    finally { setPosting(false); }
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't post your feedback. Please try again.");
+    } finally {
+      setPosting(false);
+    }
   }
 
   function timeAgo(ts) {
@@ -116,11 +198,11 @@ function CommentsSection({ reviewId }) {
 
   return (
     <div>
-      <div style={SEC_LABEL}>💬 Comments ({comments.length})</div>
+      <div style={SEC_LABEL}>💬 Passenger Feedback ({comments.length})</div>
       {comments.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--border2)', borderRadius: '16px', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💭</div>
-          <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No comments yet — be the first!</div>
+          <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No feedback yet — be the first to rate this train!</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem' }}>
@@ -135,7 +217,8 @@ function CommentsSection({ reviewId }) {
                 </div>
                 <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(c.createdAt)}</span>
               </div>
-              <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'var(--muted)', margin: 0 }}>{c.text}</p>
+              <RatingChips ratings={c.ratings} />
+              {c.text && <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'var(--muted)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{c.text}</p>}
               {c.reply && (
                 <div style={{ marginTop: '10px', marginLeft: '12px', padding: '10px 14px', borderLeft: '3px solid var(--accent)', background: 'var(--accent-dim)', borderRadius: '0 12px 12px 0' }}>
                   <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '4px' }}>✓ RaiLoversPK replied</div>
@@ -146,16 +229,38 @@ function CommentsSection({ reviewId }) {
           ))}
         </div>
       )}
+
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '18px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '12px' }}>Leave a Comment</div>
+        <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '4px' }}>Share Your Feedback</div>
+        <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '14px' }}>Rate the train, leave a comment, or both.</div>
+
         <form onSubmit={handlePost} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name (optional)" style={C_INPUT} />
-          <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Share your experience about this train..." required rows={3} style={{ ...C_INPUT, resize: 'vertical', minHeight: '80px' }} />
+          <div style={{ background: 'var(--bg3)', borderRadius: '14px', padding: '12px 14px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '6px' }}>
+              Rate this train <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </div>
+            {alreadyRated ? (
+              <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                ✓ You&apos;ve already rated this train from this device. You can still leave a comment.
+              </div>
+            ) : (
+              RATING_CATS.map(cat => (
+                <div key={cat.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '2px 0', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>{cat.label}</span>
+                  <StarPicker value={ratings[cat.key]} label={cat.short} onChange={v => setRatings(r => ({ ...r, [cat.key]: v }))} />
+                </div>
+              ))
+            )}
+          </div>
+
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name (optional)" maxLength={60} style={C_INPUT} />
+          <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Share your experience about this train..." rows={3} maxLength={1000} style={{ ...C_INPUT, resize: 'vertical', minHeight: '80px' }} />
+          {error && <div style={{ fontSize: '12px', color: '#f97070', fontWeight: 600 }}>{error}</div>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <button type="submit" disabled={posting || !text.trim()} style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: '100px', padding: '11px 22px', cursor: posting || !text.trim() ? 'not-allowed' : 'pointer', opacity: posting || !text.trim() ? 0.6 : 1 }}>
-              {posting ? 'Posting…' : 'Post Comment'}
+            <button type="submit" disabled={!canPost} style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: '100px', padding: '11px 22px', cursor: canPost ? 'pointer' : 'not-allowed', opacity: canPost ? 1 : 0.6 }}>
+              {posting ? 'Posting…' : 'Post Feedback'}
             </button>
-            {posted && <span style={{ fontSize: '12px', color: '#3fca7a', fontWeight: 600 }}>✓ Posted!</span>}
+            {posted && <span style={{ fontSize: '12px', color: '#3fca7a', fontWeight: 600 }}>✓ Thanks for your feedback!</span>}
           </div>
         </form>
       </div>
@@ -172,6 +277,7 @@ export default function ReviewClient({ params }) {
   const [showVideo, setShowVideo] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const commentsRef = useRef(null);
+  const pubRating   = usePublicRating(id);
 
   useEffect(() => {
     getDoc(doc(db, 'reviews', id)).then(snap => {
@@ -235,13 +341,13 @@ export default function ReviewClient({ params }) {
     </main>
   );
 
-  const scores   = review.scores || {};
+  const eff      = effectiveRating(review, pubRating);
   const videoId  = getYtId(review.videoUrl);
   const gallery  = [review.coverImage, ...(review.images || [])].filter(Boolean);
-  const avgScore = (() => {
-    const vals = [scores.punctuality, scores.cleanliness, scores.comfort, scores.food].filter(v => v > 0);
-    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
-  })();
+  function goRate() {
+    setShowComments(true);
+    setTimeout(() => commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  }
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
@@ -278,11 +384,11 @@ export default function ReviewClient({ params }) {
             <h1 className="font-display" style={{ fontSize: 'clamp(2rem, 7vw, 5rem)', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: '8px', marginTop: '10px' }}>{review.name}</h1>
             <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)' }}>{review.route}</div>
           </div>
-          {avgScore && (
+          {eff.overall && (
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--accent-border)', borderRadius: '16px', padding: '1rem 1.5rem', textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '4px' }}>Overall</div>
-              <div className="font-display" style={{ fontSize: '3rem', color: 'var(--accent)', lineHeight: 1 }}>{avgScore}</div>
-              <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px' }}>out of 5.0</div>
+              <div style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '4px' }}>{eff.overall.source === 'public' ? 'Passenger Rating' : "Creator's Rating"}</div>
+              <div className="font-display" style={{ fontSize: '3rem', color: 'var(--accent)', lineHeight: 1 }}>{eff.overall.value.toFixed(1)}</div>
+              <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px' }}>{eff.overall.source === 'public' ? `from ${eff.overall.count} rating${eff.overall.count === 1 ? '' : 's'}` : 'out of 5.0'}</div>
             </div>
           )}
         </div>
@@ -292,12 +398,18 @@ export default function ReviewClient({ params }) {
         {/* Scores + Fares */}
         <div className="rl-review-detail-grid">
           <div>
-            <div style={SEC_LABEL}>Ratings</div>
+            <div style={SEC_LABEL}>Passenger Ratings</div>
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1.25rem' }}>
-              <ScoreBar label="⏱ Punctuality" score={scores.punctuality || 0} />
-              <ScoreBar label="🧹 Cleanliness" score={scores.cleanliness || 0} />
-              <ScoreBar label="💺 Comfort"     score={scores.comfort     || 0} />
-              <ScoreBar label="🍱 Food"        score={scores.food        || 0} />
+              {RATING_CATS.map(cat => {
+                const r = eff.cats[cat.key];
+                return <ScoreBar key={cat.key} label={cat.label} value={r.value} n={r.n} source={r.source} />;
+              })}
+              {!eff.loading && eff.overall?.source !== 'public' && (
+                <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                  No passenger ratings yet.{' '}
+                  <button type="button" onClick={goRate} style={LINK_BTN}>Be the first to rate →</button>
+                </div>
+              )}
             </div>
           </div>
           <div>
@@ -409,4 +521,5 @@ const BTN_BACK      = { fontSize: '11px', fontWeight: 700, letterSpacing: '0.14e
 const BTN_YT        = { fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: '#ff0000', textDecoration: 'none', padding: '11px 22px', borderRadius: '100px' };
 const LOADING       = { padding: '5rem 2.5rem', textAlign: 'center', color: 'var(--muted)', fontSize: '14px', fontFamily: "'Inter', sans-serif" };
 const STAT_PILL     = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--muted)', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '100px', padding: '5px 12px' };
+const LINK_BTN      = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--accent)', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' };
 const C_INPUT       = { width: '100%', background: 'var(--bg3)', border: '1px solid var(--border2)', borderRadius: '12px', padding: '12px 16px', color: 'var(--text)', fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 500, outline: 'none' };
