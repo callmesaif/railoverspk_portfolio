@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const totalVisits = pages ? pages.reduce((s, p) => s + p.views, 0) : null;
   const pubPosts    = posts   ? posts.filter(p => p.published).length   : null;
   const pubReviews  = reviews ? reviews.filter(r => r.published).length : null;
-  const awaiting    = ready   ? comments.filter(c => !c.reply).length   : null;
+  const awaiting    = ready   ? comments.filter(c => !c.reply && (c.message ?? c.text)).length   : null;
 
   const today = new Date().toISOString().split('T')[0];
   const activeAlerts = (alerts || []).filter(a => a.active && (!a.validUntil || a.validUntil >= today));
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
     const items = [
       ...(posts || []).map(p => ({ key: 'p' + p.id, kind: 'Post', title: p.title || 'Untitled', status: p.published ? 'Published' : 'Draft', tone: p.published ? 'ok' : 'muted', time: toMs(p.createdAt), href: `/admin/posts/${p.id}` })),
       ...(reviews || []).map(r => ({ key: 'r' + r.id, kind: 'Review', title: r.name || 'Untitled', status: r.published ? 'Published' : 'Draft', tone: r.published ? 'ok' : 'muted', time: toMs(r.createdAt), href: `/admin/reviews/${r.id}` })),
-      ...comments.map(c => ({ key: `c${c.type}${c.parentId}${c.id}`, kind: 'Comment', title: `${c.name || 'Anonymous'}: ${(c.message ?? c.text ?? '').slice(0, 70)}`, status: c.reply ? 'Replied' : 'Needs reply', tone: c.reply ? 'ok' : 'warn', time: toMs(c.createdAt), href: '/admin/comments' })),
+      ...comments.map(c => ({ key: `c${c.type}${c.parentId}${c.id}`, kind: 'Comment', title: `${c.name || 'Anonymous'}: ${(c.message ?? c.text ?? '').slice(0, 70) || 'left a rating'}`, status: c.reply ? 'Replied' : 'Needs reply', tone: c.reply ? 'ok' : 'warn', time: toMs(c.createdAt), href: '/admin/comments' })),
     ];
     return items.sort((a, b) => b.time - a.time).slice(0, 8);
   }, [posts, reviews, comments]);
