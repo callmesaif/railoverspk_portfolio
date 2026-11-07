@@ -1,9 +1,9 @@
 // Single source of truth — update here, reflects everywhere (Ticker + Stats)
 export const SITE_STATS = [
-  { num: '6M+',  label: 'Total Views'    },
-  { num: '80+',  label: 'Train Reviews'  },
-  { num: '42K+', label: 'Subscribers'    },
-  { num: '7+',   label: 'Years On Track' },
+  { num: '2M+',  label: 'Total Views'    },
+  { num: '10+',  label: 'Train Reviews'  },
+  { num: '7K+', label: 'Subscribers'    },
+  { num: '8+',   label: 'Years On Track' },
 ];
 
 const TICKER_ITEMS = [

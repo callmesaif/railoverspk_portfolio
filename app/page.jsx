@@ -12,8 +12,8 @@ import LatestVlogs from '@/components/LatestVlogs';
 const STATS = [
   { num: '2M+',  label: 'Total Views'    },
   { num: '10+',  label: 'Train Reviews'  },
-  { num: '6.5K', label: 'Subscribers'    },
-  { num: '7+',   label: 'Years On Track' },
+  { num: '7K+', label: 'Subscribers'    },
+  { num: '8+',   label: 'Years On Track' },
 ];
 
 export default function HomePage() {
