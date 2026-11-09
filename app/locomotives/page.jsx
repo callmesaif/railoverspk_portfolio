@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
+import OptimizedImage from '@/components/OptimizedImage';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -82,7 +83,7 @@ export default function LocomotivesPage() {
               >
                 <div style={{ position: 'relative', height: '180px', overflow: 'hidden', background: 'var(--bg3)' }}>
                   {l.coverImage ? (
-                    <img src={l.coverImage} alt={l.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <OptimizedImage src={l.coverImage} alt={l.name} sizes="(max-width: 768px) 100vw, (max-width: 1100px) 50vw, 360px" />
                   ) : (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🚂</div>
                   )}

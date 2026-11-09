@@ -103,7 +103,7 @@ export default function BlogPage() {
             <Link href={`/blogs/${hero.id}`} style={HERO_CARD}>
               <div style={{ position: 'relative', flex: '0 0 55%', minHeight: '340px' }}>
                 {hero.coverImage ? (
-                  <Image src={hero.coverImage} alt={hero.title} fill style={{ objectFit: 'cover' }} />
+                  <Image src={hero.coverImage} alt={hero.title} fill sizes="(max-width: 900px) 100vw, 55vw" style={{ objectFit: 'cover' }} />
                 ) : (
                   <div style={{ position: 'absolute', inset: 0, background: 'var(--bg3)' }} />
                 )}
@@ -147,7 +147,7 @@ function PostCard({ post }) {
     <Link href={`/blogs/${post.id}`} style={CARD}>
       <div style={{ position: 'relative', height: '180px', overflow: 'hidden', flexShrink: 0 }}>
         {post.coverImage ? (
-          <Image src={post.coverImage} alt={post.title} fill style={{ objectFit: 'cover', transition: 'transform 0.4s' }} />
+          <Image src={post.coverImage} alt={post.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1100px) 50vw, 33vw" style={{ objectFit: 'cover', transition: 'transform 0.4s' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🚂</div>
         )}

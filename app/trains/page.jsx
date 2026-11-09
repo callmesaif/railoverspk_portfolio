@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
+import OptimizedImage from '@/components/OptimizedImage';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -223,8 +224,8 @@ export default function TrainsPage() {
                 >
                   {/* Cover image */}
                   {train.coverImage && (
-                    <div style={{ width: '100px', height: '70px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: 'var(--bg3)' }}>
-                      <img src={train.coverImage} alt={train.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'relative', width: '100px', height: '70px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: 'var(--bg3)' }}>
+                      <OptimizedImage src={train.coverImage} alt={train.name} sizes="100px" />
                     </div>
                   )}
 

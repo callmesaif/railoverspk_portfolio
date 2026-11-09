@@ -1,4 +1,5 @@
 'use client';
+import OptimizedImage from '@/components/OptimizedImage';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { useAllPublicRatings } from '@/lib/usePublicRatings';
@@ -87,8 +88,8 @@ export default function TrainLeaderboard({ reviews = [], limit = 10, compact = f
             >
               <div style={{ fontSize: i === 0 ? '2.5rem' : '2rem' }}>{MEDALS[i]}</div>
               {r.coverImage && (
-                <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg3)' }}>
-                  <img src={r.coverImage} alt={r.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg3)' }}>
+                  <OptimizedImage src={r.coverImage} alt={r.name} sizes="(max-width: 768px) 33vw, 330px" />
                 </div>
               )}
               <div className="font-display" style={{ fontSize: '1.1rem', textTransform: 'uppercase', lineHeight: 1.1, color: 'var(--text)' }}>

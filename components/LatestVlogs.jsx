@@ -1,4 +1,5 @@
 'use client';
+import OptimizedImage from '@/components/OptimizedImage';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -111,13 +112,7 @@ export default function LatestVlogs() {
           {/* Strict 16:9 Landscape Frame */}
           <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: 'var(--bg3)' }}>
             {vlog.thumbnail && (
-              <img
-                src={vlog.thumbnail}
-                alt={vlog.title}
-                loading={i < 2 ? 'eager' : 'lazy'}
-                decoding="async"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <OptimizedImage src={vlog.thumbnail} alt={vlog.title} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 280px" />
             )}
             <div style={{
               position: 'absolute', inset: 0,
