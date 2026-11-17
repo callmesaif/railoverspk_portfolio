@@ -9,9 +9,6 @@ export async function GET(req) {
   const slug = searchParams.get('slug');
 
   if (slug) {
-    const cached = getCache(`post_${slug}`);
-    if (cached) return ok(cached);
-
     try {
       const snap = await adminDb.collection('posts').doc(slug).get();
       if (!snap.exists) return err('Post not found', 404);
@@ -24,7 +21,6 @@ export async function GET(req) {
         return ok(post);
       }
 
-      setCache(`post_${slug}`, post, 10 * 60_000);
       return ok(post);
     } catch (e) {
       return err('Unable to retrieve post', 500);
@@ -78,7 +74,6 @@ export async function PATCH(req) {
     if (!id) return err('ID required');
     await adminDb.collection('posts').doc(id).update({ ...data, updatedAt: new Date() });
     setCache('posts_public', null);
-    setCache(`post_${id}`, null);
     return ok({ id });
   } catch {
     return err('Unable to update post', 500);
@@ -95,7 +90,6 @@ export async function DELETE(req) {
     if (!id) return err('ID required');
     await adminDb.collection('posts').doc(id).delete();
     setCache('posts_public', null);
-    setCache(`post_${id}`, null);
     return ok({ deleted: id });
   } catch {
     return err('Unable to delete post', 500);
