@@ -8,9 +8,6 @@ export async function GET(req) {
   const id = searchParams.get('id');
 
   if (id) {
-    const cached = getCache(`review_${id}`);
-    if (cached) return ok(cached);
-
     try {
       const snap = await adminDb.collection('reviews').doc(id).get();
       if (!snap.exists) return err('Review not found', 404);
@@ -23,7 +20,6 @@ export async function GET(req) {
         return ok(review);
       }
 
-      setCache(`review_${id}`, review, 10 * 60_000);
       return ok(review);
     } catch {
       return err('Unable to retrieve review', 500);
@@ -74,7 +70,6 @@ export async function PATCH(req) {
     if (!id) return err('ID required');
     await adminDb.collection('reviews').doc(id).update({ ...data, updatedAt: new Date() });
     setCache('reviews_public', null);
-    setCache(`review_${id}`, null);
     return ok({ id });
   } catch {
     return err('Unable to update review', 500);
