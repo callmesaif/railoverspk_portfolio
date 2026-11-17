@@ -1,25 +1,31 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getIdTokenResult, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase-auth';
 
 export default function AdminLoginPage() {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
-  const router                  = useRouter();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleLogin(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      // Force a fresh token so recently assigned/revoked custom claims take effect.
+      const tokenResult = await getIdTokenResult(credential.user, true);
+      if (tokenResult.claims.admin !== true) {
+        setError('This account is not authorized to access the admin panel.');
+        return;
+      }
       router.replace('/admin');
-    } catch (err) {
-      setError('Invalid email or password.');
+    } catch {
+      setError('Invalid email, password, or account authorization.');
     } finally {
       setLoading(false);
     }
@@ -28,7 +34,6 @@ export default function AdminLoginPage() {
   return (
     <div style={PAGE}>
       <div style={CARD}>
-        {/* Logo */}
         <div style={LOGO}>
           <span style={DOT} />
           RAILOVERSPK
@@ -43,6 +48,7 @@ export default function AdminLoginPage() {
             <input
               type="email"
               required
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@railoverspk.com"
@@ -54,6 +60,7 @@ export default function AdminLoginPage() {
             <input
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -61,9 +68,7 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          {error && (
-            <div style={ERROR_BOX}>{error}</div>
-          )}
+          {error && <div style={ERROR_BOX} role="alert">{error}</div>}
 
           <button
             type="submit"
