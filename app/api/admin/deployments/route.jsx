@@ -34,7 +34,7 @@ export async function GET(req) {
       id: item.uid || item.id || null,
       url: item.url || null,
       state: item.state || item.readyState || null,
-      createdAt: item.createdAt || null,
+      createdAt: item.createdAt || item.created || null,
       target: item.target || null,
     }));
 
