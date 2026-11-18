@@ -1,4 +1,4 @@
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb }                    from '@/lib/firebase-admin';
 import { ok, err, verifyAdmin, rateLimit, getCache, setCache } from '@/lib/api-helpers';
 
 export async function GET(req) {
@@ -8,22 +8,13 @@ export async function GET(req) {
   const id = searchParams.get('id');
 
   if (id) {
-    try {
-      const snap = await adminDb.collection('reviews').doc(id).get();
-      if (!snap.exists) return err('Review not found', 404);
-
-      const review = { id: snap.id, ...snap.data() };
-      if (review.published !== true) {
-        const uid = await verifyAdmin(req);
-        if (!uid) return err('Review not found', 404);
-        // Do not cache unpublished content in the shared public cache.
-        return ok(review);
-      }
-
-      return ok(review);
-    } catch {
-      return err('Unable to retrieve review', 500);
-    }
+    const cached = getCache(`review_${id}`);
+    if (cached) return ok(cached);
+    const snap = await adminDb.collection('reviews').doc(id).get();
+    if (!snap.exists) return err('Review not found', 404);
+    const review = { id: snap.id, ...snap.data() };
+    setCache(`review_${id}`, review, 10 * 60_000);
+    return ok(review);
   }
 
   const cached = getCache('reviews_public');
@@ -38,8 +29,8 @@ export async function GET(req) {
     const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     setCache('reviews_public', reviews, 5 * 60_000);
     return ok(reviews);
-  } catch {
-    return err('Unable to retrieve reviews', 500);
+  } catch (e) {
+    return err(e.message, 500);
   }
 }
 
@@ -49,15 +40,11 @@ export async function POST(req) {
 
   try {
     const body = await req.json();
-    const ref = await adminDb.collection('reviews').add({
-      ...body,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const ref  = await adminDb.collection('reviews').add({ ...body, createdAt: new Date(), updatedAt: new Date() });
     setCache('reviews_public', null);
     return ok({ id: ref.id }, 201);
-  } catch {
-    return err('Unable to create review', 500);
+  } catch (e) {
+    return err(e.message, 500);
   }
 }
 
@@ -70,9 +57,10 @@ export async function PATCH(req) {
     if (!id) return err('ID required');
     await adminDb.collection('reviews').doc(id).update({ ...data, updatedAt: new Date() });
     setCache('reviews_public', null);
+    setCache(`review_${id}`, null);
     return ok({ id });
-  } catch {
-    return err('Unable to update review', 500);
+  } catch (e) {
+    return err(e.message, 500);
   }
 }
 
@@ -85,9 +73,8 @@ export async function DELETE(req) {
     if (!id) return err('ID required');
     await adminDb.collection('reviews').doc(id).delete();
     setCache('reviews_public', null);
-    setCache(`review_${id}`, null);
     return ok({ deleted: id });
-  } catch {
-    return err('Unable to delete review', 500);
+  } catch (e) {
+    return err(e.message, 500);
   }
 }

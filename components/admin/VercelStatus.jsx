@@ -1,34 +1,20 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase-auth';
 
 export default function VercelStatus() {
   const [deployments, setDeployments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   async function fetchStatus() {
     setLoading(true);
-    setError('');
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Sign in as an administrator to view deployments.');
-
-      const token = await user.getIdToken();
-      const res = await fetch('/api/admin/deployments', {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
+      const res = await fetch('/api/admin/deployments');
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Unable to load deployment status.');
+      if (data.deployments) {
+        setDeployments(data.deployments);
       }
-
-      setDeployments(Array.isArray(data.deployments) ? data.deployments : []);
     } catch (err) {
-      setError(err.message || 'Failed to fetch deployment status.');
-      setDeployments([]);
+      console.error('Failed to fetch Vercel status:', err);
     } finally {
       setLoading(false);
     }
@@ -36,7 +22,7 @@ export default function VercelStatus() {
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 20000);
+    const interval = setInterval(fetchStatus, 20000); // Har 20 seconds baad Auto Refresh
     return () => clearInterval(interval);
   }, []);
 
@@ -52,7 +38,7 @@ export default function VercelStatus() {
       case 'CANCELED':
         return { label: '⊘ Canceled', color: '#888', bg: 'rgba(255,255,255,0.05)' };
       default:
-        return { label: state || 'Unknown', color: '#888', bg: 'rgba(255,255,255,0.05)' };
+        return { label: state, color: '#888', bg: 'rgba(255,255,255,0.05)' };
     }
   }
 
@@ -62,31 +48,28 @@ export default function VercelStatus() {
         <h3 style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           🚀 Vercel Deployments Status
         </h3>
-        <button
-          onClick={fetchStatus}
-          disabled={loading}
-          style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: loading ? 'wait' : 'pointer', fontSize: '12px', fontWeight: 700 }}
+        <button 
+          onClick={fetchStatus} 
+          style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
         >
           {loading ? 'Fetching...' : '🔄 Refresh'}
         </button>
       </div>
 
-      {error && <p role="alert" style={{ color: '#f97070', fontSize: '12px', marginBottom: '12px' }}>{error}</p>}
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {!loading && !error && deployments.length === 0 && (
-          <p style={{ color: 'var(--muted)', fontSize: '12px' }}>No recent deployments found.</p>
-        )}
         {deployments.map(dep => {
           const badge = getBadge(dep.state);
+          const commitMsg = dep.meta?.githubCommitMessage || 'Manual Deployment';
+          const branch = dep.meta?.githubCommitRef || 'main';
+
           return (
-            <div key={dep.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border2)' }}>
+            <div key={dep.uid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border2)' }}>
               <div style={{ maxWidth: '70%' }}>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {dep.commitMessage || 'Manual Deployment'}
+                  {commitMsg}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)' }}>
-                  {dep.branch || 'main'} · {dep.createdAt ? new Date(dep.createdAt).toLocaleString() : 'Date unavailable'}
+                  {branch} · {new Date(dep.created).toLocaleString()}
                 </div>
               </div>
 

@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getIdTokenResult, onIdTokenChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase-auth';
 
 const AuthContext = createContext(null);
@@ -11,44 +11,21 @@ export function useAdmin() {
 }
 
 export function AdminAuthProvider({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = loading
-  const router = useRouter();
-  const pathname = usePathname();
+  const [user, setUser]       = useState(undefined); // undefined = loading
+  const router                = useRouter();
+  const pathname              = usePathname();
 
   useEffect(() => {
-    let active = true;
-
-    const unsub = onIdTokenChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        if (!active) return;
-        setUser(null);
-        if (pathname !== '/admin/login') router.replace('/admin/login');
-        return;
-      }
-
-      try {
-        const tokenResult = await getIdTokenResult(firebaseUser);
-        if (!active) return;
-
-        if (tokenResult.claims.admin === true) {
-          setUser(firebaseUser);
-        } else {
-          setUser(null);
-          if (pathname !== '/admin/login') router.replace('/admin/login');
-        }
-      } catch {
-        if (!active) return;
-        setUser(null);
-        if (pathname !== '/admin/login') router.replace('/admin/login');
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u ?? null);
+      if (!u && pathname !== '/admin/login') {
+        router.replace('/admin/login');
       }
     });
-
-    return () => {
-      active = false;
-      unsub();
-    };
+    return unsub;
   }, [pathname, router]);
 
+  // Still checking auth
   if (user === undefined) {
     return (
       <div style={LOADING_STYLE}>
@@ -58,6 +35,7 @@ export function AdminAuthProvider({ children }) {
     );
   }
 
+  // Not logged in and not on login page — redirect handled above
   if (!user && pathname !== '/admin/login') return null;
 
   return (
