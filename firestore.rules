@@ -1,0 +1,199 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only Firebase Auth users carrying the server-assigned custom claim
+    // { admin: true } are administrators. A normal signed-in account is not.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function validRatings(r) {
+      return r is map
+        && r.keys().hasOnly(['punctuality', 'cleanliness', 'comfort', 'food'])
+        && (!('punctuality' in r) || (r.punctuality is int && r.punctuality >= 1 && r.punctuality <= 5))
+        && (!('cleanliness' in r) || (r.cleanliness is int && r.cleanliness >= 1 && r.cleanliness <= 5))
+        && (!('comfort' in r) || (r.comfort is int && r.comfort >= 1 && r.comfort <= 5))
+        && (!('food' in r) || (r.food is int && r.food >= 1 && r.food <= 5));
+    }
+
+    function ratingKeysOk() {
+      return request.resource.data.keys().hasOnly([
+        'n_punctuality', 's_punctuality',
+        'n_cleanliness', 's_cleanliness',
+        'n_comfort', 's_comfort',
+        'n_food', 's_food', 'updatedAt'
+      ]);
+    }
+
+    function countValue(data, key) {
+      return data.get(key, 0);
+    }
+
+    // On first rating write a category may be absent/zero or have exactly
+    // one submitted rating. Each category's first increment is at most +1.
+    function ratingCategoryCreateOk(category) {
+      let n = countValue(request.resource.data, 'n_' + category);
+      let s = countValue(request.resource.data, 's_' + category);
+      return (n == 0 && s == 0)
+        || (n == 1 && s is int && s >= 1 && s <= 5);
+    }
+
+    function ratingCategoryUpdateOk(category) {
+      let oldN = countValue(resource.data, 'n_' + category);
+      let oldS = countValue(resource.data, 's_' + category);
+      let newN = countValue(request.resource.data, 'n_' + category);
+      let newS = countValue(request.resource.data, 's_' + category);
+      let dn = newN - oldN;
+      let ds = newS - oldS;
+      return (dn == 0 && ds == 0)
+        || (dn == 1 && ds is int && ds >= 1 && ds <= 5);
+    }
+
+    function validRatingCreate() {
+      return ratingKeysOk()
+        && request.resource.data.updatedAt is timestamp
+        && ratingCategoryCreateOk('punctuality')
+        && ratingCategoryCreateOk('cleanliness')
+        && ratingCategoryCreateOk('comfort')
+        && ratingCategoryCreateOk('food');
+    }
+
+    function validRatingUpdate() {
+      return ratingKeysOk()
+        && request.resource.data.updatedAt is timestamp
+        && ratingCategoryUpdateOk('punctuality')
+        && ratingCategoryUpdateOk('cleanliness')
+        && ratingCategoryUpdateOk('comfort')
+        && ratingCategoryUpdateOk('food');
+    }
+
+    // Public analytics writes are limited to one increment per write.
+    // This is abuse reduction, not a substitute for server-side analytics
+    // or distributed rate limiting.
+    function validAnalyticsCreate() {
+      return request.resource.data.keys().hasOnly(['path', 'views', 'lastSeen'])
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 500
+        && request.resource.data.views == 1
+        && request.resource.data.lastSeen is timestamp;
+    }
+
+    function validAnalyticsUpdate() {
+      return request.resource.data.keys().hasOnly(['path', 'views', 'lastSeen'])
+        && request.resource.data.path == resource.data.path
+        && request.resource.data.views is int
+        && request.resource.data.views == resource.data.views + 1
+        && request.resource.data.lastSeen is timestamp;
+    }
+
+    // Public review-page view counters. The client increments views by one
+    // and unique by either zero or one; all other fields are rejected.
+    function validReviewStatsCreate() {
+      return request.resource.data.keys().hasOnly(['views', 'unique', 'updatedAt'])
+        && request.resource.data.views == 1
+        && request.resource.data.unique in [0, 1]
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    function validReviewStatsUpdate() {
+      let dv = request.resource.data.views - resource.data.views;
+      let du = request.resource.data.unique - resource.data.unique;
+      return request.resource.data.keys().hasOnly(['views', 'unique', 'updatedAt'])
+        && request.resource.data.views is int
+        && request.resource.data.unique is int
+        && dv == 1
+        && du in [0, 1]
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    match /trains/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /locomotives/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Public visitors see only published content. Admin dashboard can
+    // read drafts and perform editorial operations.
+    match /posts/{id} {
+      allow read: if isAdmin() || resource.data.published == true;
+      allow create, update, delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['name', 'text', 'createdAt'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 60
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt is timestamp;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /reviews/{id} {
+      allow read: if isAdmin() || resource.data.published == true;
+      allow create, update, delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['name', 'text', 'createdAt', 'ratings'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 60
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt is timestamp
+          && (!('ratings' in request.resource.data) || validRatings(request.resource.data.ratings))
+          && (request.resource.data.text.size() > 0 || ('ratings' in request.resource.data));
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /review_ratings/{id} {
+      allow read: if true;
+      allow create: if isAdmin() || validRatingCreate();
+      allow update: if isAdmin() || validRatingUpdate();
+      allow delete: if isAdmin();
+    }
+
+    match /review_stats/{id} {
+      allow read: if true;
+      allow create: if isAdmin() || validReviewStatsCreate();
+      allow update: if isAdmin() || validReviewStatsUpdate();
+      allow delete: if isAdmin();
+    }
+
+    match /stories/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Public contact form uses the server API/Admin SDK. Direct client
+    // writes are intentionally denied; only admins may read/manage inbox.
+    match /contact_messages/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
+
+    match /analytics/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || validAnalyticsCreate();
+      allow update: if isAdmin() || validAnalyticsUpdate();
+      allow delete: if isAdmin();
+    }
+
+    // Public alert endpoints read daily_reports; only administrators manage them.
+    match /daily_reports/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // No catch-all authenticated-user access. Collections not explicitly
+    // listed above are denied by default.
+  }
+}
